@@ -1,11 +1,18 @@
 from App.config import getConfiguration
 from collective.exportimport.import_content import ImportContent
 from plone import api
+from collective.exportimport import _
+from ZPublisher.HTTPRequest import FileUpload
+from six.moves.urllib.parse import unquote
+from six.moves.urllib.parse import urlparse
+from zope.component import getUtility
+from plone.dexterity.interfaces import IDexterityFTI
 
 import logging
 import json
 import os
 import transaction
+import ijson
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +94,139 @@ class CustomImportContent(ImportContent):
     DROP_PATHS = []
 
     DROP_UIDS = []
+
+    def __call__(
+        self,
+        jsonfile=None,
+        return_json=False,
+        limit=None,
+        server_file=None,
+        iterator=None
+    ):
+        request = self.request
+        self.limit = limit
+        self.commit = int(request["commit"]) if request.get("commit") else None
+        self.import_to_current_folder = request.get("import_to_current_folder", False)
+
+        self.handle_existing_content = int(request.get("handle_existing_content", 1))
+        self.handle_existing_content_options = (
+            ("0", _("Skip: Don't import at all")),
+            ("1", _("Replace: Delete item and create new")),
+            ("2", _("Update: Reuse and only overwrite imported data")),
+            ("3", _("Ignore: Create with a new id")),
+        )
+        self.import_old_revisions = request.get("import_old_revisions", False)
+
+        if not self.request.form.get("form.submitted", False):
+            return self.template()
+
+        # If we open a server file, we should close it at the end.
+        close_file = False
+        status = "success"
+        msg = ""
+        if server_file and jsonfile:
+            # This is an error.  But when you upload 10 GB AND select a server file,
+            # it is a pity when you would have to upload again.
+            api.portal.show_message(
+                _(u"json file was uploaded, so the selected server file was ignored."),
+                request=self.request,
+                type="warn",
+            )
+            server_file = None
+            status = "error"
+        if server_file and not jsonfile:
+            if server_file in self.server_files:
+                for path in self.import_paths:
+                    full_path = os.path.join(path, server_file)
+                    if os.path.exists(full_path):
+                        logger.info("Using server file %s", full_path)
+                        # Open the file in binary mode and use it as jsonfile.
+                        jsonfile = open(full_path, "rb")
+                        close_file = True
+                        break
+            else:
+                msg = _("File '{}' not found on server.").format(server_file)
+                api.portal.show_message(msg, request=self.request, type="warn")
+                server_file = None
+                status = "error"
+        if jsonfile:
+            self.portal = api.portal.get()
+            try:
+                if isinstance(jsonfile, str):
+                    return_json = True
+                    data = ijson.items(jsonfile, "item")
+                elif isinstance(jsonfile, FileUpload) or hasattr(jsonfile, "read"):
+                    data = ijson.items(jsonfile, "item")
+                else:
+                    raise RuntimeError("Data is neither text, file nor upload.")
+            except Exception as e:
+                logger.error(str(e))
+                status = "error"
+                msg = str(e)
+                api.portal.show_message(
+                    _(u"Exception during upload: {}").format(e),
+                    request=self.request,
+                )
+            else:
+                self.start()
+                msg = self.do_import(data)
+                api.portal.show_message(msg, self.request)
+
+        if close_file:
+            jsonfile.close()
+
+        if not jsonfile and iterator:
+            self.start()
+            msg = self.do_import(iterator)
+            api.portal.show_message(msg, self.request)
+
+        self.finish()
+
+        if return_json:
+            msg = {"state": status, "msg": msg}
+            return json.dumps(msg)
+        return self.template()
+
+    def create_container(self, item):
+        """Create container for item.
+
+        See remarks in get_parent_as_container for some corner cases.
+        """
+        folder = self.context
+        parent_url = unquote(item["parent"]["@id"])
+        parent_url_parsed = urlparse(parent_url)
+        # Get the path part, split it, remove the always empty first element.
+        parent_path = parent_url_parsed.path.split("/")[1:]
+        if (
+            len(parent_url_parsed.netloc.split(":")) > 1
+            or parent_url_parsed.netloc == "nohost"
+        ):
+            # For example localhost:8080, or nohost when running tests.
+            # First element will then be a Plone Site id.
+            # Get rid of it.
+            parent_path = parent_path[1:]
+
+        # Handle folderish Documents provided by plone.volto
+        fti = getUtility(IDexterityFTI, name="Document")
+        parent_type = "Document" if fti.klass.endswith("FolderishDocument") else "Folder"
+        # create original structure for imported content
+        for element in parent_path:
+            #Migration genweb
+            try:
+                if element not in folder:
+                    folder = api.content.create(
+                        container=folder,
+                        type=parent_type,
+                        id=element,
+                        title=element,
+                    )
+                    logger.info(u"Created container %s to hold %s", folder.absolute_url(), item["@id"])
+                else:
+                    folder = folder[element]
+            except:
+                logger.error(u"NOT Created container %s to hold %s", folder.absolute_url(), item["@id"])
+
+        return folder
 
 #No lo utilizo son ejemplos de Philip Bauer
 #     def start(self):

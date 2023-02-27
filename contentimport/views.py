@@ -2,6 +2,8 @@ from App.config import getConfiguration
 from bs4 import BeautifulSoup
 from collective.exportimport.fix_html import fix_html_in_content_fields
 from collective.exportimport.fix_html import fix_html_in_portlets
+from collective.exportimport.fix_html import _get_picture_variant_mapping
+from collective.exportimport.fix_html import FALLBACK_VARIANT
 from contentimport.interfaces import IContentimportLayer
 from logging import getLogger
 from pathlib import Path
@@ -70,72 +72,73 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [table_class_fixer, img_variant_fixer]
-        results = fix_html_in_content_fields(fixers=fixers)
-        msg = "Fixed html for {} content items".format(results)
-        logger.info(msg)
-        transaction.commit()
+        # No lo utilizo son ejemplos de Philip Bauer
+        # fixers = [table_class_fixer, img_variant_fixer]
+        # results = fix_html_in_content_fields(fixers=fixers)
+        # msg = "Fixed html for {} content items".format(results)
+        # logger.info(msg)
+        # transaction.commit()
 
-        results = fix_html_in_portlets()
-        msg = "Fixed html for {} portlets".format(results)
-        logger.info(msg)
-        transaction.commit()
+        # results = fix_html_in_portlets()
+        # msg = "Fixed html for {} portlets".format(results)
+        # logger.info(msg)
+        # transaction.commit()
 
-        reset_dates = api.content.get_view("reset_dates", portal, request)
-        reset_dates()
+        # reset_dates = api.content.get_view("reset_dates", portal, request)
+        # reset_dates()
         transaction.commit()
 
         return request.response.redirect(portal.absolute_url())
 
 
-def table_class_fixer(text, obj=None):
-    if "table" not in text:
-        return text
-    dropped_classes = [
-        "MsoNormalTable",
-        "MsoTableGrid",
-    ]
-    replaced_classes = {
-        "invisible": "invisible-grid",
-    }
-    soup = BeautifulSoup(text, "html.parser")
-    for table in soup.find_all("table"):
-        table_classes = table.get("class", [])
-        for dropped in dropped_classes:
-            if dropped in table_classes:
-                table_classes.remove(dropped)
-        for old, new in replaced_classes.items():
-            if old in table_classes:
-                table_classes.remove(old)
-                table_classes.append(new)
-        # all tables get the default bootstrap table class
-        if "table" not in table_classes:
-            table_classes.insert(0, "table")
+# def table_class_fixer(text, obj=None):
+#     if "table" not in text:
+#         return text
+#     dropped_classes = [
+#         "MsoNormalTable",
+#         "MsoTableGrid",
+#     ]
+#     replaced_classes = {
+#         "invisible": "invisible-grid",
+#     }
+#     soup = BeautifulSoup(text, "html.parser")
+#     for table in soup.find_all("table"):
+#         table_classes = table.get("class", [])
+#         for dropped in dropped_classes:
+#             if dropped in table_classes:
+#                 table_classes.remove(dropped)
+#         for old, new in replaced_classes.items():
+#             if old in table_classes:
+#                 table_classes.remove(old)
+#                 table_classes.append(new)
+#         # all tables get the default bootstrap table class
+#         if "table" not in table_classes:
+#             table_classes.insert(0, "table")
 
-    return soup.decode()
+#     return soup.decode()
 
-def img_variant_fixer(text, obj=None, fallback_variant=None):
-    """Set image-variants"""
-    if not text:
-        return text
+# def img_variant_fixer(text, obj=None, fallback_variant=None):
+#     """Set image-variants"""
+#     if not text:
+#         return text
 
-    scale_variant_mapping = _get_picture_variant_mapping()
-    if fallback_variant is None:
-        fallback_variant = FALLBACK_VARIANT
+#     scale_variant_mapping = _get_picture_variant_mapping()
+#     if fallback_variant is None:
+#         fallback_variant = FALLBACK_VARIANT
 
-    soup = BeautifulSoup(text, "html.parser")
-    for tag in soup.find_all("img"):
-        if "data-val" not in tag.attrs:
-            # maybe external image
-            continue
-        scale = tag["data-scale"]
-        variant = scale_variant_mapping.get(scale, fallback_variant)
-        tag["data-picturevariant"] = variant
+#     soup = BeautifulSoup(text, "html.parser")
+#     for tag in soup.find_all("img"):
+#         if "data-val" not in tag.attrs:
+#             # maybe external image
+#             continue
+#         scale = tag["data-scale"]
+#         variant = scale_variant_mapping.get(scale, fallback_variant)
+#         tag["data-picturevariant"] = variant
 
-        classes = tag["class"]
-        new_class = "picture-variant-{}".format(variant)
-        if new_class not in classes:
-            classes.append(new_class)
-            tag["class"] = classes
+#         classes = tag["class"]
+#         new_class = "picture-variant-{}".format(variant)
+#         if new_class not in classes:
+#             classes.append(new_class)
+#             tag["class"] = classes
 
-    return soup.decode()
+#     return soup.decode()
