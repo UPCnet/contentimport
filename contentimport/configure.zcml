@@ -43,4 +43,20 @@
       permission="cmf.ManagePortal"
       />
 
+  <browser:page
+      name="import_portlets"
+      for="zope.interface.Interface"
+      class=".import_other.CustomImportPortlets"
+      layer="contentimport.interfaces.IContentimportLayer"
+      permission="cmf.ManagePortal"
+      />
+
+  <browser:page
+      name="import_localroles"
+      for="zope.interface.Interface"
+      class=".import_other.CustomImportLocalRoles"
+      layer="contentimport.interfaces.IContentimportLayer"
+      permission="cmf.ManagePortal"
+      />
+
 </configure>
