@@ -44,20 +44,22 @@ class ImportAll(BrowserView):
         view = api.content.get_view("import_content", portal, request)
         request.form["form.submitted"] = True
         request.form["commit"] = 500
-        view(server_file="Plone.json", return_json=True)
+        view(server_file=portal.id + ".json", return_json=True)
         transaction.commit()
 
         other_imports = [
             "relations",
-            "members",
             "translations",
+            "members",
             "localroles",
-            "ordering",
             "defaultpages",
+            "ordering",
             "discussion",
             "portlets",
             "redirects",
+            "controlpanels",
         ]
+
         for name in other_imports:
             view = api.content.get_view(f"import_{name}", portal, request)
             path = Path(directory) / f"export_{name}.json"
@@ -112,16 +114,14 @@ def table_class_fixer(text, obj=None):
 
     return soup.decode()
 
-
-def img_variant_fixer(text, obj=None):
+def img_variant_fixer(text, obj=None, fallback_variant=None):
     """Set image-variants"""
     if not text:
         return text
 
-    picture_variants = api.portal.get_registry_record("plone.picture_variants")
-    scale_variant_mapping = {k: v["sourceset"][0]["scale"] for k, v in picture_variants.items()}
-    scale_variant_mapping["thumb"] = "mini"
-    fallback_variant = "preview"
+    scale_variant_mapping = _get_picture_variant_mapping()
+    if fallback_variant is None:
+        fallback_variant = FALLBACK_VARIANT
 
     soup = BeautifulSoup(text, "html.parser")
     for tag in soup.find_all("img"):
@@ -133,7 +133,7 @@ def img_variant_fixer(text, obj=None):
         tag["data-picturevariant"] = variant
 
         classes = tag["class"]
-        new_class = f"picture-variant-{variant}"
+        new_class = "picture-variant-{}".format(variant)
         if new_class not in classes:
             classes.append(new_class)
             tag["class"] = classes
