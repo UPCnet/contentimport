@@ -119,7 +119,6 @@ def img_icon_blanc(text, obj=None):
         classes = tag.get("class", [])
         if "link_blank" in classes:
             # delete image
-            print(soup)
             tag.decompose()
         else:
             continue
@@ -219,7 +218,6 @@ def html_fixer(text, obj=None, old_portal_url=None):
         classes = tag.get("class", [])
         if "link_blank" in classes:
             # delete image
-            print(soup)
             tag.decompose()
         else:
             continue
