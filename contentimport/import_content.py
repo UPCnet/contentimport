@@ -7,6 +7,7 @@ from six.moves.urllib.parse import unquote
 from six.moves.urllib.parse import urlparse
 from zope.component import getUtility
 from plone.dexterity.interfaces import IDexterityFTI
+from zope.annotation.interfaces import IAnnotations
 
 import logging
 import json
@@ -88,6 +89,7 @@ CUSTOMVIEWFIELDS_MAPPING = {
     "warnings": None,
 }
 
+ANNOTATIONS_KEY = "exportimport.annotations"
 
 class CustomImportContent(ImportContent):
 
@@ -227,6 +229,16 @@ class CustomImportContent(ImportContent):
                 logger.error(u"NOT Created container %s to hold %s", folder.absolute_url(), item["@id"])
 
         return folder
+
+    def global_obj_hook(self, obj, item):
+        item = self.import_annotations(obj, item)
+        return item
+
+    def import_annotations(self, obj, item):
+        annotations = IAnnotations(obj)
+        for key in item.get(ANNOTATIONS_KEY, []):
+            annotations[key] = item[ANNOTATIONS_KEY][key]
+        return item
 
 #No lo utilizo son ejemplos de Philip Bauer
 #     def start(self):
