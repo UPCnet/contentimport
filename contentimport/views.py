@@ -26,6 +26,25 @@ logger = getLogger(__name__)
 
 DEFAULT_ADDONS = []
 
+CLASS_MODIFY = {
+    "row-fluid": "row",
+    "span1": "col-md-1",
+    "span2": "col-md-2",
+    "span3": "col-md-3",
+    "span4": "col-md-4",
+    "span5": "col-md-5",
+    "span6": "col-md-6",
+    "span7": "col-md-7",
+    "span8": "col-md-8",
+    "span9": "col-md-9",
+    "span10": "col-md-10",
+    "span11": "col-md-11",
+    "span12": "col-md-12",
+    "lead": "card p-3 text-bg-light",
+    "taulaRegistres": "table table-stripped",
+    "xlsdf": "xls",
+    "carousel slide": "carousel slide gw4-carousel",
+}
 
 class ImportAll(BrowserView):
 
@@ -80,7 +99,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [img_icon_blanc, nav_tabs]
+        fixers = [img_icon_blanc, nav_tabs, modify_class]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -152,6 +171,23 @@ def nav_tabs(text, obj=None):
             classes.append("show")
         else:
             classes.append("fade")
+    return soup.decode()
+
+def modify_class(text, obj=None):
+    """Modificar classes bootstrap"""
+    if not text:
+        return text
+
+    soup = BeautifulSoup(text, "html.parser")
+    for olds, news in CLASS_MODIFY.items():
+        for tag in soup.find_all(class_=olds):
+            classes = tag.get("class", [])
+            for old in olds.split():
+                classes.remove(old)
+            for new in news.split():
+                classes.append(new)
+            msg = "Fixed html class {} in object {}".format(news, obj.absolute_url())
+            logger.info(msg)
     return soup.decode()
 
 #No he modificado la funcion pero la necesito para poder modificar el html_fixer
