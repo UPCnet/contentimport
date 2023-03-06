@@ -240,6 +240,29 @@ class CustomImportContent(ImportContent):
             annotations[key] = item[ANNOTATIONS_KEY][key]
         return item
 
+    def set_uuid(self, item, obj):
+        uuid = item.get("UID")
+        if '-' in uuid:
+            uuid = uuid.split('-')[:-1][0]
+        if not uuid:
+            return obj.UID()
+        if not self.update_existing and api.content.find(UID=uuid):
+            # this should only happen if you run import multiple times
+            # without updating existing content
+            uuid = obj.UID()
+            logger.info(
+                "UID {} of {} already in use by {}. Using {}".format(
+                    item["UID"],
+                    item["@id"],
+                    api.content.get(UID=item["UID"]).absolute_url(),
+                    uuid,
+                ),
+            )
+        else:
+            setattr(obj, "_plone.uuid", uuid)
+            obj.reindexObject(idxs=["UID"])
+        return uuid
+
 #No lo utilizo son ejemplos de Philip Bauer
 #     def start(self):
 #         self.items_without_parent = []
