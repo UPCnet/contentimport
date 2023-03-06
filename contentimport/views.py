@@ -2,8 +2,6 @@ from App.config import getConfiguration
 from bs4 import BeautifulSoup
 from collective.exportimport.fix_html import fix_html_in_content_fields
 from collective.exportimport.fix_html import fix_html_in_portlets
-from collective.exportimport.fix_html import _get_picture_variant_mapping
-from collective.exportimport.fix_html import FALLBACK_VARIANT
 from collective.exportimport.fix_html import fix_tag_attr
 from contentimport.interfaces import IContentimportLayer
 from logging import getLogger
@@ -82,7 +80,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [img_icon_blanc]
+        fixers = [img_icon_blanc, nav_tabs]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -122,6 +120,38 @@ def img_icon_blanc(text, obj=None):
             tag.decompose()
         else:
             continue
+    return soup.decode()
+
+def nav_tabs(text, obj=None):
+    """Modificar bootstrap antiguo pestañas"""
+    if not text:
+        return text
+
+    soup = BeautifulSoup(text, "html.parser")
+    for tag in soup.find_all("ul", class_="nav nav-tabs"):
+        classes = tag.get("class", [])
+        classes.append("nav-gw4")
+        for li in tag.find_all("li"):
+            classes = li.get("class", [])
+            if "active" in classes:
+                new_li = str('<li class="nav-item"><button class="nav-link active" data-bs-toggle=' + li.a.get("data-toggle") + ' data-bs-target=' +  li.a.get("href") + ' type="button" aria-selected="true">' + li.a.get_text() + '</button></li>')
+                soup_li =  BeautifulSoup(new_li, "html.parser")
+                new_tag_li = soup_li.find_all("li")
+                li.replace_with(new_tag_li[0])
+            else:
+                new_li = str('<li class="nav-item"><button class="nav-link" data-bs-toggle=' + li.a.get("data-toggle") + ' data-bs-target=' +  li.a.get("href") + ' type="button" aria-selected="false">' + li.a.get_text() + '</button></li>')
+                soup_li =  BeautifulSoup(new_li, "html.parser")
+                new_tag_li = soup_li.find_all("li")
+                li.replace_with(new_tag_li[0])
+        msg = "Fixed html nav_tabs {}".format(obj.absolute_url())
+        logger.info(msg)
+    for tag in soup.find_all("div", class_="tab-pane"):
+        classes = tag.get("class", [])
+        if "tab-pane" and "active" in classes:
+            classes.append("fade")
+            classes.append("show")
+        else:
+            classes.append("fade")
     return soup.decode()
 
 #No he modificado la funcion pero la necesito para poder modificar el html_fixer

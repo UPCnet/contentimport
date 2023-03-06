@@ -22,6 +22,8 @@ from z3c.form import button, field, interfaces, util
 import zope.component
 from collective.exportimport.import_other import ImportPortlets
 from collective.exportimport.import_other import ImportLocalRoles
+from collective.exportimport.import_other import ImportTranslations
+from collective.exportimport.import_other import link_translations
 # FI Migration genweb
 import json
 import logging
@@ -164,7 +166,10 @@ class CustomImportLocalRoles(ImportLocalRoles):
         results = 0
         total = len(data)
         for index, item in enumerate(data, start=1):
-            obj = api.content.get(UID=item["uuid"])
+            try:
+                obj = api.content.get(UID=item["uuid"])
+            except:
+                continue
             if not obj:
                 if item["uuid"] == PORTAL_PLACEHOLDER:
                     obj = api.portal.get()
@@ -197,3 +202,48 @@ class CustomImportLocalRoles(ImportLocalRoles):
             pghandler = ZLogHandler(1000)
             catalog.reindexIndex("allowedRolesAndUsers", None, pghandler=pghandler)
         return results
+
+class CustomImportTranslations(ImportTranslations):
+    """Import portlets"""
+
+    def import_translations(self, data):
+        imported = 0
+        empty = []
+        less_than_2 = []
+        for translationgroup in data:
+            if len(translationgroup) < 2:
+                continue
+
+            # Make sure we have content to translate
+            tg_with_obj = {}
+            for lang, uid in translationgroup.items():
+                try:
+                    obj = api.content.get(UID=uid)
+                except:
+                    continue
+                if obj:
+                    tg_with_obj[lang] = obj
+                else:
+                    # logger.info(f'{uid} not found')
+                    continue
+            if not tg_with_obj:
+                empty.append(translationgroup)
+                continue
+
+            if len(tg_with_obj) < 2:
+                less_than_2.append(translationgroup)
+                logger.info(u"Only one item: {}".format(translationgroup))
+                continue
+
+            imported += 1
+            for index, (lang, obj) in enumerate(tg_with_obj.items()):
+                if index == 0:
+                    canonical = obj
+                else:
+                    translation = obj
+                    link_translations(canonical, translation, lang)
+        logger.info(
+            u"Imported {} translation-groups. For {} groups we found only one item. {} groups without content dropped".format(
+                imported, len(less_than_2), len(empty)
+            )
+        )
