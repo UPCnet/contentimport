@@ -99,7 +99,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_img_icon_blanc, fix_nav_tabs, fix_modify_class]
+        fixers = [fix_img_icon_blanc, fix_nav_tabs, fix_nav_tabs_box, fix_modify_class]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -170,6 +170,58 @@ def fix_nav_tabs(text, obj=None):
         msg = "Fixed html nav_tabs {}".format(obj.absolute_url())
         logger.info(msg)
     for div in soup.find_all("div", class_="tab-content"):
+        for tag in div.find_all("div", class_="tab-pane"):
+            classes = tag.get("class", [])
+            classes.append("fade")
+            tag.attrs.update({"role":"tabpanel"})
+            tag.attrs.update({"aria-labelledby": tag.get("id", []) + "-tab"})
+            tag.attrs.update({"tabindex":"0"})
+            if "active" in classes:
+                classes.append("show")
+
+    return soup.decode()
+
+def fix_nav_tabs_box(text, obj=None):
+    """Modificar bootstrap antiguo pestañas caixes"""
+    if not text:
+        return text
+
+    soup = BeautifulSoup(text, "html.parser")
+    for div in soup.find_all("div", class_="beautytab"):
+        classes = div.get("class", [])
+        classes.append("card")
+        classes.remove("beautytab")
+        for tag in div.find_all("ul"):
+            classes = tag.get("class", [])
+            if classes:
+                classes.append("nav")
+                classes.append("nav-tabs")
+                classes.append("nav-card-gw4")
+                classes.append("px-1")
+                classes.append("pt-1")
+            else:
+                tag.attrs.update({"class":"nav nav-tabs nav-card-gw4 px-1 pt-1"})
+            tag.attrs.update({"role":"tablist"})
+            for li in tag.find_all("li"):
+                classes = li.get("class", [])
+                href = li.a.get("href")
+                if '#' in href:
+                    href_sin = href[1:]
+                if "active" in classes:
+                    new_li = str('<li class="nav-item" role="presentation"><button id="' + href_sin + '-tab" class="nav-link active" data-bs-toggle="tab" data-bs-target= ' +  href + ' type="button" aria-selected="true" role="tab" aria-controls=' + href_sin + '>' + li.a.get_text() + '</button></li>')
+                    soup_li =  BeautifulSoup(new_li, "html.parser")
+                    new_tag_li = soup_li.find_all("li")
+                    li.replace_with(new_tag_li[0])
+                else:
+                    new_li = str('<li class="nav-item" role="presentation"><button id="' + href_sin + '-tab" class="nav-link" data-bs-toggle="tab" data-bs-target= ' +  href + ' type="button" aria-selected="false" role="tab" aria-controls=' + href_sin + '>' + li.a.get_text() + '</button></li>')
+                    soup_li =  BeautifulSoup(new_li, "html.parser")
+                    new_tag_li = soup_li.find_all("li")
+                    li.replace_with(new_tag_li[0])
+            msg = "Fixed html fix_nav_tabs_box {}".format(obj.absolute_url())
+            logger.info(msg)
+    for div in soup.find_all("div", class_="tab-content"):
+        classes = div.get("class", [])
+        classes.remove("beautytab-content")
         for tag in div.find_all("div", class_="tab-pane"):
             classes = tag.get("class", [])
             classes.append("fade")
