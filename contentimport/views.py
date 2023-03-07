@@ -99,7 +99,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [img_icon_blanc, nav_tabs, modify_class]
+        fixers = [fix_img_icon_blanc, fix_nav_tabs, fix_modify_class]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -126,7 +126,7 @@ class ImportAll(BrowserView):
 
         return request.response.redirect(portal.absolute_url())
 
-def img_icon_blanc(text, obj=None):
+def fix_img_icon_blanc(text, obj=None):
     """Delete image icon blanc"""
     if not text:
         return text
@@ -141,7 +141,7 @@ def img_icon_blanc(text, obj=None):
             continue
     return soup.decode()
 
-def nav_tabs(text, obj=None):
+def fix_nav_tabs(text, obj=None):
     """Modificar bootstrap antiguo pestañas"""
     if not text:
         return text
@@ -150,30 +150,38 @@ def nav_tabs(text, obj=None):
     for tag in soup.find_all("ul", class_="nav nav-tabs"):
         classes = tag.get("class", [])
         classes.append("nav-gw4")
+        classes.append("mb-3")
+        tag.attrs.update({"role":"tablist"})
         for li in tag.find_all("li"):
             classes = li.get("class", [])
+            href = li.a.get("href")
+            if '#' in href:
+                href_sin = href[1:]
             if "active" in classes:
-                new_li = str('<li class="nav-item"><button class="nav-link active" data-bs-toggle=' + li.a.get("data-toggle") + ' data-bs-target=' +  li.a.get("href") + ' type="button" aria-selected="true">' + li.a.get_text() + '</button></li>')
+                new_li = str('<li class="nav-item" role="presentation"><button id="' + href_sin + '-tab" class="nav-link active" data-bs-toggle="tab" data-bs-target= ' +  href + ' type="button" aria-selected="true" role="tab" aria-controls=' + href_sin + '>' + li.a.get_text() + '</button></li>')
                 soup_li =  BeautifulSoup(new_li, "html.parser")
                 new_tag_li = soup_li.find_all("li")
                 li.replace_with(new_tag_li[0])
             else:
-                new_li = str('<li class="nav-item"><button class="nav-link" data-bs-toggle=' + li.a.get("data-toggle") + ' data-bs-target=' +  li.a.get("href") + ' type="button" aria-selected="false">' + li.a.get_text() + '</button></li>')
+                new_li = str('<li class="nav-item" role="presentation"><button id="' + href_sin + '-tab" class="nav-link" data-bs-toggle="tab" data-bs-target= ' +  href + ' type="button" aria-selected="false" role="tab" aria-controls=' + href_sin + '>' + li.a.get_text() + '</button></li>')
                 soup_li =  BeautifulSoup(new_li, "html.parser")
                 new_tag_li = soup_li.find_all("li")
                 li.replace_with(new_tag_li[0])
         msg = "Fixed html nav_tabs {}".format(obj.absolute_url())
         logger.info(msg)
-    for tag in soup.find_all("div", class_="tab-pane"):
-        classes = tag.get("class", [])
-        if "tab-pane" and "active" in classes:
+    for div in soup.find_all("div", class_="tab-content"):
+        for tag in div.find_all("div", class_="tab-pane"):
+            classes = tag.get("class", [])
             classes.append("fade")
-            classes.append("show")
-        else:
-            classes.append("fade")
+            tag.attrs.update({"role":"tabpanel"})
+            tag.attrs.update({"aria-labelledby": tag.get("id", []) + "-tab"})
+            tag.attrs.update({"tabindex":"0"})
+            if "active" in classes:
+                classes.append("show")
+
     return soup.decode()
 
-def modify_class(text, obj=None):
+def fix_modify_class(text, obj=None):
     """Modificar classes bootstrap"""
     if not text:
         return text
