@@ -99,7 +99,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_img_icon_blanc, fix_nav_tabs, fix_nav_tabs_box, fix_accordion, fix_modify_class]
+        fixers = [fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_modify_class]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -142,17 +142,17 @@ def fix_img_icon_blanc(text, obj=None):
     return soup.decode()
 
 def fix_nav_tabs(text, obj=None):
-    """Modify tabs old to new bootstrap"""
+    """Modificar bootstrap antiguo pestañas"""
     if not text:
         return text
 
     soup = BeautifulSoup(text, "html.parser")
-    for tag in soup.find_all("ul", class_="nav nav-tabs"):
-        classes = tag.get("class", [])
+    for ul_nav_tabs in soup.find_all("ul", class_="nav nav-tabs"):
+        classes = ul_nav_tabs.get("class", [])
         classes.append("nav-gw4")
         classes.append("mb-3")
-        tag.attrs.update({"role":"tablist"})
-        for li in tag.find_all("li"):
+        ul_nav_tabs.attrs.update({"role":"tablist"})
+        for li in ul_nav_tabs.find_all("li"):
             classes = li.get("class", [])
             href = li.a.get("href")
             if '#' in href:
@@ -187,13 +187,13 @@ def fix_nav_tabs_box(text, obj=None):
         return text
 
     soup = BeautifulSoup(text, "html.parser")
-    for div in soup.find_all("div", class_="beautytab"):
-        classes = div.get("class", [])
+    for div_beautytab in soup.find_all("div", class_="beautytab"):
+        classes = div_beautytab.get("class", [])
         classes.append("card")
         classes.append("nav-box-gw4")
         classes.append("mb-3")
         classes.remove("beautytab")
-        for tag in div.find_all("ul"):
+        for tag in div_beautytab.find_all("ul"):
             classes = tag.get("class", [])
             if classes:
                 classes.append("nav")
@@ -219,20 +219,19 @@ def fix_nav_tabs_box(text, obj=None):
                     soup_li =  BeautifulSoup(new_li, "html.parser")
                     new_tag_li = soup_li.find_all("li")
                     li.replace_with(new_tag_li[0])
-            msg = "Fixed html fix_nav_tabs_box {}".format(obj.absolute_url())
-            logger.info(msg)
-    for div in soup.find_all("div", class_="tab-content"):
-        classes = div.get("class", [])
-        classes.remove("beautytab-content")
-        for tag in div.find_all("div", class_="tab-pane"):
-            classes = tag.get("class", [])
-            classes.append("fade")
-            tag.attrs.update({"role":"tabpanel"})
-            tag.attrs.update({"aria-labelledby": tag.get("id", []) + "-tab"})
-            tag.attrs.update({"tabindex":"0"})
-            if "active" in classes:
-                classes.append("show")
-
+        for div_content in div_beautytab.find_all("div", class_="tab-content"):
+            classes = div_content.get("class", [])
+            classes.remove("beautytab-content")
+            for div_tab_pane in div_content.find_all("div", class_="tab-pane"):
+                classes = div_tab_pane.get("class", [])
+                classes.append("fade")
+                div_tab_pane.attrs.update({"role":"tabpanel"})
+                div_tab_pane.attrs.update({"aria-labelledby": tag.get("id", []) + "-tab"})
+                div_tab_pane.attrs.update({"tabindex":"0"})
+                if "active" in classes:
+                    classes.append("show")
+        msg = "Fixed html fix_nav_tabs_box {}".format(obj.absolute_url())
+        logger.info(msg)
     return soup.decode()
 
 def fix_accordion(text, obj=None):
