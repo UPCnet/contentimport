@@ -46,6 +46,30 @@ CLASS_MODIFY = {
     "carousel slide": "carousel slide gw4-carousel",
 }
 
+IMAGE_MODIFY = {
+    "/example-owl.jpeg": "++theme++genweb6.theme/img/sample/owl.jpeg",
+    "/example-fox.jpeg": "++theme++genweb6.theme/img/sample/fox.jpeg",
+    "/example-penguin.jpeg": "++theme++genweb6.theme/img/sample/penguin.jpeg",
+    "/example-artic-fox.jpeg": "++theme++genweb6.theme/img/sample/artic-fox.jpeg",
+    "/banerMostra1linia_gw3.png": "++theme++genweb6.theme/img/sample/owl.jpeg",
+    "/car1.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/car2.jpg": "++theme++genweb6.theme/img/sample/turtle.jpeg",
+    "/mostra.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg1.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg2.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg3.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg4.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg5.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg6.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg7.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg8.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg9.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg10.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/sampleimg11.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/anecs-petit.jpeg": "++theme++genweb6.theme/img/sample/fox.jpeg",
+    "/anecs-gran.jpg": "++theme++genweb6.theme/img/sample/fox.jpeg",
+}
+
 class ImportAll(BrowserView):
 
     def __call__(self):
@@ -99,7 +123,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_modify_class]
+        fixers = [fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_modify_class]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -287,6 +311,26 @@ def fix_modify_class(text, obj=None):
                 classes.append(new)
             msg = "Fixed html class {} in object {}".format(news, obj.absolute_url())
             logger.info(msg)
+    return soup.decode()
+
+def fix_modify_image_gw4(text, obj=None):
+    """Modify image genweb 4"""
+    if not text:
+        return text
+
+    soup = BeautifulSoup(text, "html.parser")
+    for image in soup.find_all("img"):
+        for olds, news in IMAGE_MODIFY.items():
+            if olds in image["src"]:
+                image.attrs.update({"src": news})
+                image.parent.attrs.update({"href": obj.portal_url() + '/' + news})
+                try:
+                    if olds in image.parent.parent.attrs["href"]:
+                        image.parent.parent.attrs.update({"href": obj.portal_url() + '/' + news})
+                except:
+                    continue
+                msg = "Fixed html image {} in object {}".format(news, obj.absolute_url())
+                logger.info(msg)
     return soup.decode()
 
 #No he modificado la funcion pero la necesito para poder modificar el html_fixer
