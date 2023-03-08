@@ -99,7 +99,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_img_icon_blanc, fix_nav_tabs, fix_nav_tabs_box, fix_modify_class]
+        fixers = [fix_img_icon_blanc, fix_nav_tabs, fix_nav_tabs_box, fix_accordion, fix_modify_class]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -142,7 +142,7 @@ def fix_img_icon_blanc(text, obj=None):
     return soup.decode()
 
 def fix_nav_tabs(text, obj=None):
-    """Modificar bootstrap antiguo pestañas"""
+    """Modify tabs old to new bootstrap"""
     if not text:
         return text
 
@@ -182,7 +182,7 @@ def fix_nav_tabs(text, obj=None):
     return soup.decode()
 
 def fix_nav_tabs_box(text, obj=None):
-    """Modificar bootstrap antiguo pestañas caixes"""
+    """Modify tabs_box old to new bootstrap"""
     if not text:
         return text
 
@@ -190,6 +190,8 @@ def fix_nav_tabs_box(text, obj=None):
     for div in soup.find_all("div", class_="beautytab"):
         classes = div.get("class", [])
         classes.append("card")
+        classes.append("nav-box-gw4")
+        classes.append("mb-3")
         classes.remove("beautytab")
         for tag in div.find_all("ul"):
             classes = tag.get("class", [])
@@ -230,6 +232,44 @@ def fix_nav_tabs_box(text, obj=None):
             tag.attrs.update({"tabindex":"0"})
             if "active" in classes:
                 classes.append("show")
+
+    return soup.decode()
+
+def fix_accordion(text, obj=None):
+    """Modify accordion old to new bootstrap"""
+    if not text:
+        return text
+
+    soup = BeautifulSoup(text, "html.parser")
+    for div_accordion in soup.find_all("div", class_="accordion"):
+        classes = div_accordion.get("class", [])
+        classes.append("accordion-gw4")
+        classes.append("mb-3")
+        for div_accordion_item in div_accordion.find_all("div", class_="accordion-group"):
+            classes = div_accordion_item.get("class", [])
+            classes.append("accordion-item")
+            classes.remove("accordion-group")
+            for div_head in div_accordion_item.find_all("div", class_="accordion-heading"):
+                href = div_head.a.get("href")
+                if '#' in href:
+                    href_sin = href[1:]
+                data_parent = div_head.a.get("data-parent")
+                new_h2 = str('<h2 class="accordion-header" id="' + href_sin + 'Heading"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="' + href + '" aria-expanded="false" aria-controls="' + href + '">' + div_head.a.get_text() + '</button></h2>')
+                soup_h2 =  BeautifulSoup(new_h2, "html.parser")
+                new_tag_h2 = soup_h2.find_all("h2")
+                div_head.replace_with(new_tag_h2[0])
+            for div_body in div_accordion_item.find_all("div", class_="accordion-body"):
+                classes = div_body.get("class", [])
+                classes.append("accordion-collapse")
+                classes.remove("accordion-body")
+                div_body.attrs.update({"aria-labelledby": href_sin + "Heading"})
+                div_body.attrs.update({"data-bs-parent": data_parent})
+            for div_inner in div_accordion_item.find_all("div", class_="accordion-inner"):
+                classes = div_inner.get("class", [])
+                classes.append("accordion-body")
+                classes.remove("accordion-inner")
+        msg = "Fixed html fix_accordion {}".format(obj.absolute_url())
+        logger.info(msg)
 
     return soup.decode()
 
