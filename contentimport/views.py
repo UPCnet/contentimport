@@ -170,7 +170,13 @@ def fix_nav_tabs(text, obj=None):
     if not text:
         return text
 
-    soup = BeautifulSoup(text, "html.parser")
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        istext = False
+
     for ul_nav_tabs in soup.find_all("ul", class_="nav nav-tabs"):
         classes = ul_nav_tabs.get("class", [])
         classes.append("nav-gw4")
@@ -203,14 +209,23 @@ def fix_nav_tabs(text, obj=None):
             if "active" in classes:
                 classes.append("show")
 
-    return soup.decode()
+    if istext:
+        return soup.decode()
+    else:
+        return soup
 
 def fix_nav_tabs_box(text, obj=None):
     """Modify tabs_box old to new bootstrap"""
     if not text:
         return text
 
-    soup = BeautifulSoup(text, "html.parser")
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        istext = False
+
     for div_beautytab in soup.find_all("div", class_="beautytab"):
         classes = div_beautytab.get("class", [])
         classes.append("card")
@@ -256,14 +271,24 @@ def fix_nav_tabs_box(text, obj=None):
                     classes.append("show")
         msg = "Fixed html fix_nav_tabs_box {}".format(obj.absolute_url())
         logger.info(msg)
-    return soup.decode()
+
+    if istext:
+        return soup.decode()
+    else:
+        return soup
 
 def fix_accordion(text, obj=None):
     """Modify accordion old to new bootstrap"""
     if not text:
         return text
 
-    soup = BeautifulSoup(text, "html.parser")
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        istext = False
+
     for div_accordion in soup.find_all("div", class_="accordion"):
         classes = div_accordion.get("class", [])
         classes.append("accordion-gw4")
@@ -294,14 +319,24 @@ def fix_accordion(text, obj=None):
         msg = "Fixed html fix_accordion {}".format(obj.absolute_url())
         logger.info(msg)
 
-    return soup.decode()
+    if istext:
+        return soup.decode()
+    else:
+        return soup
 
 def fix_carousel(text, obj=None):
     """Modify carousel old to new bootstrap"""
     if not text:
         return text
 
-    soup_ini = BeautifulSoup(text, "html.parser")
+    if isinstance(text, str):
+        soup_ini = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup_ini = text
+        text = text.prettify()
+        istext = False
+
     for div_carousel in soup_ini.find_all("div", class_="carousel"):
         new_text = str('<div class="template-carousel">' + text + '</div>')
         soup = BeautifulSoup(new_text, "html.parser")
@@ -345,7 +380,10 @@ def fix_carousel(text, obj=None):
             msg = "Fixed html fix_carousel {}".format(obj.absolute_url())
             logger.info(msg)
 
-        return soup.decode()
+        if istext:
+            return soup.decode()
+        else:
+            return soup
 
 def fix_modify_class(text, obj=None):
     """Modificar classes bootstrap"""
@@ -485,6 +523,19 @@ def html_fixer(text, obj=None, old_portal_url=None):
             tag.decompose()
         else:
             continue
+
+    if soup.find_all("div", {"class": "beautytab"}):
+        soup = fix_nav_tabs_box(soup, obj)
+
+    if soup.find_all("ul", {"class": "nav nav-tabs"}):
+        soup = fix_nav_tabs(soup, obj)
+
+    if soup.find_all("div", {"class": "accordion"}):
+        soup = fix_accordion(soup, obj)
+
+    if soup.find_all("div", {"class": "carousel"}):
+        soup = fix_carousel(soup, obj)
+
     #FI Migration genweb
     return soup.decode()
 
