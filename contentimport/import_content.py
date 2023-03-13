@@ -234,6 +234,10 @@ class CustomImportContent(ImportContent):
         item = self.import_annotations(obj, item)
         return item
 
+    def global_dict_hook(self, item):
+        item["creators"] = [i for i in item.get("creators", []) if i]
+        return item
+
     def import_annotations(self, obj, item):
         annotations = IAnnotations(obj)
         for key in item.get(ANNOTATIONS_KEY, []):

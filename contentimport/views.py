@@ -123,7 +123,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_modify_class]
+        fixers = [fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_modify_class]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -296,6 +296,57 @@ def fix_accordion(text, obj=None):
 
     return soup.decode()
 
+def fix_carousel(text, obj=None):
+    """Modify carousel old to new bootstrap"""
+    if not text:
+        return text
+
+    soup_ini = BeautifulSoup(text, "html.parser")
+    for div_carousel in soup_ini.find_all("div", class_="carousel"):
+        new_text = str('<div class="template-carousel">' + text + '</div>')
+        soup = BeautifulSoup(new_text, "html.parser")
+        for div_carousel in soup.find_all("div", class_="carousel"):
+            classes = div_carousel.get("class", [])
+            classes.append("carousel-dark")
+            classes.append("mb-2")
+            classes.append("carousel-gw4")
+            for div_carousel_inner in div_carousel.find_all("div", class_="carousel-inner"):
+                for div_carousel_item in div_carousel_inner.find_all("div", class_="item"):
+                    classes = div_carousel_item.get("class", [])
+                    classes.append("carousel-item")
+                    classes.remove("item")
+                    div_carousel_item.attrs.update({"data-bs-interval": 10000})
+                    for image in div_carousel_item.find_all("img"):
+                        classes = image.get("class", [])
+                        classes.append("d-block")
+                        classes.append("w-100")
+                    for div_carousel_caption in div_carousel_item.find_all("div", class_="carousel-caption"):
+                        classesh4 = div_carousel_caption.h4.get("class", [])
+                        classesh4.append("text-truncate")
+                        classesp = div_carousel_caption.p.get("class", [])
+                        classesp.append("text-truncate-2")
+                        classesp.append("mb-1")
+            for a_carousel_control in div_carousel.find_all("a", class_="carousel-control"):
+                href = a_carousel_control.get("href")
+                if '#' in href:
+                    href_sin = href[1:]
+                if "prev" in a_carousel_control.get("data-slide"):
+                    new_button_prev = str('<button class="carousel-control-prev" type="button" data-bs-slide="prev" data-bs-target="' + href + '"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button>')
+                    soup_button_prev =  BeautifulSoup(new_button_prev, "html.parser")
+                    new_tag_button_prev = soup_button_prev.find_all("button")
+                    a_carousel_control.replace_with(new_tag_button_prev[0])
+
+                if "next" in a_carousel_control.get("data-slide"):
+                    new_button_next = str('<button class="carousel-control-next" type="button" data-bs-slide="next" data-bs-target="' + href + '"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button>')
+                    soup_button_next =  BeautifulSoup(new_button_next, "html.parser")
+                    new_tag_button_next = soup_button_next.find_all("button")
+                    a_carousel_control.replace_with(new_tag_button_next[0])
+
+            msg = "Fixed html fix_carousel {}".format(obj.absolute_url())
+            logger.info(msg)
+
+        return soup.decode()
+
 def fix_modify_class(text, obj=None):
     """Modificar classes bootstrap"""
     if not text:
@@ -323,7 +374,11 @@ def fix_modify_image_gw4(text, obj=None):
         for olds, news in IMAGE_MODIFY.items():
             if olds in image["src"]:
                 image.attrs.update({"src": news})
-                image.parent.attrs.update({"href": obj.portal_url() + '/' + news})
+                try:
+                    if olds in image.parent.attrs["href"]:
+                        image.parent.attrs.update({"href": obj.portal_url() + '/' + news})
+                except:
+                    continue
                 try:
                     if olds in image.parent.parent.attrs["href"]:
                         image.parent.parent.attrs.update({"href": obj.portal_url() + '/' + news})
