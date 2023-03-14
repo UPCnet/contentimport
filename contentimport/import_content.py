@@ -110,7 +110,7 @@ class CustomImportContent(ImportContent):
         self.commit = int(request["commit"]) if request.get("commit") else None
         self.import_to_current_folder = request.get("import_to_current_folder", False)
 
-        self.handle_existing_content = int(request.get("handle_existing_content", 1))
+        self.handle_existing_content = int(request.get("handle_existing_content", 2))
         self.handle_existing_content_options = (
             ("0", _("Skip: Don't import at all")),
             ("1", _("Replace: Delete item and create new")),

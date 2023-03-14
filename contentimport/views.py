@@ -358,9 +358,12 @@ def fix_carousel(text, obj=None):
                     for div_carousel_caption in div_carousel_item.find_all("div", class_="carousel-caption"):
                         classesh4 = div_carousel_caption.h4.get("class", [])
                         classesh4.append("text-truncate")
-                        classesp = div_carousel_caption.p.get("class", [])
-                        classesp.append("text-truncate-2")
-                        classesp.append("mb-1")
+                        try:
+                            classesp = div_carousel_caption.p.get("class", [])
+                            classesp.append("text-truncate-2")
+                            classesp.append("mb-1")
+                        except:
+                            continue
             for a_carousel_control in div_carousel.find_all("a", class_="carousel-control"):
                 href = a_carousel_control.get("href")
                 if '#' in href:
