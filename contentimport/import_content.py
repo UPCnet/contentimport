@@ -26,6 +26,7 @@ VIEW_MAPPING = {
     "folder_listing": "listing_view",
     "folder_summary_view": "summary_view",
     "folder_tabular_view": "tabular_view",
+    "folder_extended" : "listing_view",
 }
 
 PORTAL_TYPE_MAPPING = {
