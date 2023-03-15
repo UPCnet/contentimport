@@ -298,9 +298,15 @@ def fix_accordion(text, obj=None):
             classes.append("accordion-item")
             classes.remove("accordion-group")
             for div_head in div_accordion_item.find_all("div", class_="accordion-heading"):
-                href = div_head.a.get("href")
-                if '#' in href:
-                    href_sin = href[1:]
+                for div_head_a in div_head.find_all("a"):
+                    href = div_head_a.get("href")
+                    try:
+                        if '#' in href:
+                            href_sin = href[1:]
+                            break
+                    except:
+                        href_sin = '#'
+                        continue
                 data_parent = div_head.a.get("data-parent")
                 new_h2 = str('<h2 class="accordion-header" id="' + href_sin + 'Heading"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="' + href + '" aria-expanded="false" aria-controls="' + href + '">' + div_head.a.get_text() + '</button></h2>')
                 soup_h2 =  BeautifulSoup(new_h2, "html.parser")
@@ -356,9 +362,9 @@ def fix_carousel(text, obj=None):
                         classes.append("d-block")
                         classes.append("w-100")
                     for div_carousel_caption in div_carousel_item.find_all("div", class_="carousel-caption"):
-                        classesh4 = div_carousel_caption.h4.get("class", [])
-                        classesh4.append("text-truncate")
                         try:
+                            classesh4 = div_carousel_caption.h4.get("class", [])
+                            classesh4.append("text-truncate")
                             classesp = div_carousel_caption.p.get("class", [])
                             classesp.append("text-truncate-2")
                             classesp.append("mb-1")
@@ -525,7 +531,7 @@ def html_fixer(text, obj=None, old_portal_url=None):
             # delete image
             tag.decompose()
         else:
-            continue
+            pass
 
     if soup.find_all("div", {"class": "beautytab"}):
         soup = fix_nav_tabs_box(soup, obj)
