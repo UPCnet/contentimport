@@ -351,6 +351,25 @@ def fix_carousel(text, obj=None):
             classes.append("carousel-dark")
             classes.append("mb-2")
             classes.append("carousel-gw4")
+            for carousel_indicators in div_carousel.find_all("ol", class_="carousel-indicators"):
+                str_new_carousel_indicator_div = str(carousel_indicators).replace('ol', 'div')
+                soup_carousel_indicator_div = BeautifulSoup(str_new_carousel_indicator_div, "html.parser")
+                new_carousel_indicator_div = soup_carousel_indicator_div.find_all("div")
+                carousel_indicators = new_carousel_indicator_div[0]
+                carousel_indicators.replace_with(new_carousel_indicator_div[0])
+                for li_carousel_indicator in carousel_indicators.find_all("li"):
+                    classes = li_carousel_indicator.get("class", [])
+                    if "active" in classes:
+                        new_button_indicator = str('<button type="button" class="active" aria-current="true" data-bs-target="' + li_carousel_indicator.get("data-target") + '" data-bs-slide-to="' + li_carousel_indicator.get("data-slide-to") + '" aria-label="Slide ' + li_carousel_indicator.get("data-slide-to") + '"></button>')
+                        soup_button_indicator =  BeautifulSoup(new_button_indicator, "html.parser")
+                        new_tag_button_indicator = soup_button_indicator.find_all("button")
+                        li_carousel_indicator.replace_with(new_tag_button_indicator[0])
+                    else:
+                        new_button_indicator = str('<button type="button" data-bs-target="' + li_carousel_indicator.get("data-target") + '" data-bs-slide-to="' + li_carousel_indicator.get("data-slide-to") + '" aria-label="Slide ' + li_carousel_indicator.get("data-slide-to") + '"></button>')
+                        soup_button_indicator =  BeautifulSoup(new_button_indicator, "html.parser")
+                        new_tag_button_indicator = soup_button_indicator.find_all("button")
+                        li_carousel_indicator.replace_with(new_tag_button_indicator[0])
+                div_carousel.ol.replace_with(new_carousel_indicator_div[0])
             for div_carousel_inner in div_carousel.find_all("div", class_="carousel-inner"):
                 for div_carousel_item in div_carousel_inner.find_all("div", class_="item"):
                     classes = div_carousel_item.get("class", [])
