@@ -123,7 +123,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_modify_class]
+        fixers = [fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -336,14 +336,14 @@ def fix_carousel(text, obj=None):
         return text
 
     if isinstance(text, str):
-        soup_ini = BeautifulSoup(text, "html.parser")
+        soup = BeautifulSoup(text, "html.parser")
         istext = True
     else:
-        soup_ini = text
+        soup = text
         text = text.prettify()
         istext = False
 
-    for div_carousel in soup_ini.find_all("div", class_="carousel"):
+    for div_carousel in soup.find_all("div", class_="carousel"):
         new_text = str('<div class="template-carousel">' + text + '</div>')
         soup = BeautifulSoup(new_text, "html.parser")
         for div_carousel in soup.find_all("div", class_="carousel"):
@@ -408,17 +408,24 @@ def fix_carousel(text, obj=None):
             msg = "Fixed html fix_carousel {}".format(obj.absolute_url())
             logger.info(msg)
 
-        if istext:
-            return soup.decode()
-        else:
-            return soup
+    if istext:
+        return soup.decode()
+    else:
+        return soup
 
 def fix_modify_class(text, obj=None):
     """Modificar classes bootstrap"""
     if not text:
         return text
 
-    soup = BeautifulSoup(text, "html.parser")
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        text = text.prettify()
+        istext = False
+
     for olds, news in CLASS_MODIFY.items():
         for tag in soup.find_all(class_=olds):
             classes = tag.get("class", [])
@@ -428,14 +435,24 @@ def fix_modify_class(text, obj=None):
                 classes.append(new)
             msg = "Fixed html class {} in object {}".format(news, obj.absolute_url())
             logger.info(msg)
-    return soup.decode()
+    if istext:
+        return soup.decode()
+    else:
+        return soup
 
 def fix_modify_image_gw4(text, obj=None):
     """Modify image genweb 4"""
     if not text:
         return text
 
-    soup = BeautifulSoup(text, "html.parser")
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        text = text.prettify()
+        istext = False
+
     for image in soup.find_all("img"):
         for olds, news in IMAGE_MODIFY.items():
             if olds in image["src"]:
@@ -452,7 +469,10 @@ def fix_modify_image_gw4(text, obj=None):
                     continue
                 msg = "Fixed html image {} in object {}".format(news, obj.absolute_url())
                 logger.info(msg)
-    return soup.decode()
+    if istext:
+        return soup.decode()
+    else:
+        return soup
 
 #No he modificado la funcion pero la necesito para poder modificar el html_fixer
 def fix_html_in_portlets(context=None):
@@ -564,6 +584,9 @@ def html_fixer(text, obj=None, old_portal_url=None):
     if soup.find_all("div", {"class": "carousel"}):
         soup = fix_carousel(soup, obj)
 
+    soup = fix_modify_class(soup, obj)
+    soup = fix_modify_image_gw4(soup, obj)
+
     #FI Migration genweb
     return soup.decode()
 
@@ -616,5 +639,4 @@ def html_fixer(text, obj=None, old_portal_url=None):
 #         if new_class not in classes:
 #             classes.append(new_class)
 #             tag["class"] = classes
-
 #     return soup.decode()
