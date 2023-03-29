@@ -123,7 +123,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel]
+        fixers = [fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_ul_thumbnails]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -413,6 +413,34 @@ def fix_carousel(text, obj=None):
     else:
         return soup
 
+def fix_ul_thumbnails(text, obj=None):
+    """Modify accordion old to new bootstrap"""
+    if not text:
+        return text
+
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        istext = False
+
+    for ul_thumbnails in soup.find_all("ul", class_="thumbnails"):
+        classes = ul_thumbnails.get("class", [])
+        if ul_thumbnails.parent.name == 'div':
+            if 'row' in ul_thumbnails.parent.attrs['class']:
+                classes.append("row")
+                classes.append("list-unstyled")
+                classes.remove("thumbnails")
+
+        msg = "Fixed html fix_ul_thumbnails {}".format(obj.absolute_url())
+        logger.info(msg)
+
+    if istext:
+        return soup.decode()
+    else:
+        return soup
+
 def fix_modify_class(text, obj=None):
     """Modificar classes bootstrap"""
     if not text:
@@ -586,6 +614,7 @@ def html_fixer(text, obj=None, old_portal_url=None):
 
     soup = fix_modify_class(soup, obj)
     soup = fix_modify_image_gw4(soup, obj)
+    soup = fix_ul_thumbnails(soup, obj)
 
     #FI Migration genweb
     return soup.decode()
