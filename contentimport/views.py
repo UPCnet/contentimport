@@ -20,7 +20,12 @@ from zope.component import queryMultiAdapter
 from zope.interface import alsoProvides
 from zope.interface import providedBy
 
+from minio import Minio
+from minio.error import S3Error
+from shutil import rmtree
+
 import transaction
+import os
 
 logger = getLogger(__name__)
 
@@ -90,14 +95,51 @@ class ImportAll(BrowserView):
                 installer.install_product(addon)
 
         transaction.commit()
+
         cfg = getConfiguration()
-        directory = Path(cfg.clienthome) / "import"
+        directory_import = Path(cfg.clienthome) / "import"
+        directory = Path(cfg.clienthome) / "import" / portal.id
+
+        ACCES_KEY = os.environ.get('access_key', False)
+        SECRET_KEY = os.environ.get('secret_key', False)
+
+        # Connection Minio S3
+        client = Minio(
+        "minio.upc.edu",
+        access_key=ACCES_KEY,
+        secret_key=SECRET_KEY,
+        )
+
+        bucket_name = "genweb6"
+
+        found = client.bucket_exists(bucket_name)
+
+        results = False
+
+        if found:
+            # List objects information whose names starts with "my/prefix/".
+            objects = client.list_objects(bucket_name, prefix=portal.id + "/")
+            for obj in objects:
+                print(obj.bucket_name, obj.object_name, obj.last_modified, \
+                    obj.etag, obj.size, obj.content_type)
+                # Download data of an object.
+                client.fget_object("genweb6", obj.object_name, str(directory_import) + "/" + obj.object_name)
+                results = True
+
+            if results == False:
+                msg = "XXX Not json files in Minio for domain {}".format(portal.id)
+                logger.info(msg)
+                return request.response.redirect(portal.absolute_url())
 
         # import content
         view = api.content.get_view("import_content", portal, request)
         request.form["form.submitted"] = True
         request.form["commit"] = 500
-        view(server_file=portal.id + ".json", return_json=True)
+
+        path = Path(directory) / f"{portal.id}.json"
+        results = view(jsonfile=path.read_text(), return_json=True)
+        logger.info(results)
+        #view(server_file=portal.id + ".json", return_json=True)
         transaction.commit()
 
         other_imports = [
@@ -147,6 +189,9 @@ class ImportAll(BrowserView):
         # reset_dates = api.content.get_view("reset_dates", portal, request)
         # reset_dates()
         # transaction.commit()
+
+        # Delete directory and *.json
+        rmtree(directory)
 
         return request.response.redirect(portal.absolute_url())
 

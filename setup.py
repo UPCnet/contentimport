@@ -16,5 +16,6 @@ setup(
         "setuptools",
         "collective.exportimport",
         "beautifulsoup4",
+        "minio",
         ],
     )
