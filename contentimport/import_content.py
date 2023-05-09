@@ -64,6 +64,9 @@ IMPORTED_TYPES = [
     "Logos_Container",
     "Logos_Footer",
     "packet",
+    "genweb.tfemarket.market",
+    "genweb.tfemarket.offer",
+    "genweb.tfemarket.application",
 ]
 
 ALLOWED_TYPES = [
@@ -85,6 +88,9 @@ ALLOWED_TYPES = [
     "Logos_Container",
     "Logos_Footer",
     "packet",
+    "genweb.tfemarket.market",
+    "genweb.tfemarket.offer",
+    "genweb.tfemarket.application",
 ]
 
 CUSTOMVIEWFIELDS_MAPPING = {

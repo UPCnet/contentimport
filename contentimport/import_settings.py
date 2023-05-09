@@ -10,7 +10,6 @@ import json
 
 logger = getLogger(__name__)
 
-#No lo utilizo es un ejemplo de Philip Bauer
 class ImportSettings(BrowserView):
     """Import various settings"""
 
@@ -46,10 +45,8 @@ class ImportSettings(BrowserView):
     def import_settings(self, data):
         installer = get_installer(self.context)
         for addon in data["addons"]:
+            if addon == "genweb.tfemarket":
+                addon = "genweb6.tfemarket"
             if not installer.is_product_installed(addon) and installer.is_product_installable(addon):
                 installer.install_product(addon)
                 logger.info(f"Installed addon {addon}")
-        registry = getUtility(IRegistry)
-        for key, value in data["registry"].items():
-            registry[key] = value
-            logger.info(f"Imported record {key}: {value}")

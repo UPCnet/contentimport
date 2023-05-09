@@ -93,6 +93,21 @@ class ImportAll(BrowserView):
         cfg = getConfiguration()
         directory = Path(cfg.clienthome) / "import" / portal.id
 
+        other_imports_ini = [
+            "settings",
+            "controlpanels",
+        ]
+
+        for name in other_imports_ini:
+            view = api.content.get_view(f"import_{name}", portal, request)
+            path = Path(directory) / f"export_{name}.json"
+            if path.exists():
+                results = view(jsonfile=path.read_text(), return_json=True)
+                logger.info(results)
+                transaction.commit()
+            else:
+                logger.info(f"Missing file: {path}")
+
         # import content
         view = api.content.get_view("import_content", portal, request)
         request.form["form.submitted"] = True
@@ -111,7 +126,6 @@ class ImportAll(BrowserView):
             "discussion",
             "portlets",
             "redirects",
-            "controlpanels",
         ]
 
         for name in other_imports:

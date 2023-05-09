@@ -91,3 +91,9 @@ class ImportControlpanels(BrowserView):
             setattr(recaptchasettings, key, value)
             logger.info(f"Imported record {key}: {value} to controlpanel: plone.formwidget.recaptcha.interfaces.IReCaptchaSettings")
 
+        if "genweb6.tfemarket.controlpanels.tfemarket.ITfemarketSettings" in data["controlpanel"]:
+            for key, value in data["controlpanel"]["genweb6.tfemarket.controlpanels.tfemarket.ITfemarketSettings"].items():
+                from genweb6.tfemarket.controlpanels.tfemarket import ITfemarketSettings
+                tfesettings = registry.forInterface(ITfemarketSettings)
+                setattr(tfesettings, key, value)
+                logger.info(f"Imported record {key}: {value} to controlpanel: genweb6.tfemarket.controlpanels.tfemarket.ITfemarketSettings")
