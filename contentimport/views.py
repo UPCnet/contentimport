@@ -40,7 +40,7 @@ CLASS_MODIFY = {
     "span10": "col-md-10",
     "span11": "col-md-11",
     "span12": "col-md-12",
-    "lead": "card p-3 text-bg-light",
+    "lead": "card p-3 text-bg-light mb-4",
     "taulaRegistres": "table table-stripped",
     "xlsdf": "xls",
     "carousel slide": "carousel slide gw4-carousel",
@@ -138,7 +138,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_ul_thumbnails]
+        fixers = [fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_ul_thumbnails, fix_ul_full4]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -429,7 +429,7 @@ def fix_carousel(text, obj=None):
         return soup
 
 def fix_ul_thumbnails(text, obj=None):
-    """Modify accordion old to new bootstrap"""
+    """Modify ul thumbnails old to new bootstrap"""
     if not text:
         return text
 
@@ -445,10 +445,40 @@ def fix_ul_thumbnails(text, obj=None):
         if ul_thumbnails.parent.name == 'div':
             if 'row' in ul_thumbnails.parent.attrs['class']:
                 classes.append("row")
+                classes.append("ms-0")
                 classes.append("list-unstyled")
                 classes.remove("thumbnails")
 
         msg = "Fixed html fix_ul_thumbnails {}".format(obj.absolute_url())
+        logger.info(msg)
+
+    if istext:
+        return soup.decode()
+    else:
+        return soup
+
+def fix_ul_full4(text, obj=None):
+    """Modify ul full4 old to new bootstrap"""
+    if not text:
+        return text
+
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        istext = False
+
+    for ul_full4 in soup.find_all("ul", class_="full4"):
+        classes = ul_full4.get("class", [])
+        if ul_full4.parent.name == 'div':
+            if 'row' in ul_full4.parent.attrs['class']:
+                classes.append("row")
+                classes.append("ms-0")
+                classes.append("list-unstyled")
+                classes.remove("full4")
+
+        msg = "Fixed html fix_ul_full4 {}".format(obj.absolute_url())
         logger.info(msg)
 
     if istext:
@@ -630,6 +660,7 @@ def html_fixer(text, obj=None, old_portal_url=None):
     soup = fix_modify_class(soup, obj)
     soup = fix_modify_image_gw4(soup, obj)
     soup = fix_ul_thumbnails(soup, obj)
+    soup = fix_ul_full4(soup, obj)
 
     #FI Migration genweb
     return soup.decode()
