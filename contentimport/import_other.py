@@ -63,6 +63,8 @@ def register_portlets(obj, item):
         for portlet_data in portlets:
             # Migration genweb portlet new_existing_content and multiviewcollection
             pc = api.portal.get_tool('portal_catalog')
+            if portlet_data["type"] == 'genweb.portlets.new_existing_content' and portlet_data["assignment"]['element'] == '#fg-base-edit':
+                portlet_data["assignment"]['element'] = '#content-core'
             if portlet_data["type"] == 'genweb.portlets.new_existing_content' and portlet_data["assignment"]['content_or_url'] == 'INTERN':
                 path = portlet_data["assignment"]['own_content']
                 mountpoint_id = obj.getPhysicalPath()[1]
