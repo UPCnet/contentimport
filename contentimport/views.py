@@ -96,6 +96,7 @@ class ImportAll(BrowserView):
         other_imports_ini = [
             "settings",
             "controlpanels",
+            "portalrolemanager",
         ]
 
         for name in other_imports_ini:
