@@ -139,7 +139,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_ul_thumbnails, fix_ul_full4]
+        fixers = [fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_modal, fix_ul_thumbnails, fix_ul_full4]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -429,6 +429,84 @@ def fix_carousel(text, obj=None):
     else:
         return soup
 
+def fix_modal(text, obj=None):
+    """Modify modal old to new bootstrap"""
+    if not text:
+        return text
+
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        text = text.prettify()
+        istext = False
+
+    for a_modal in soup.find_all("a", attrs={"data-toggle": "modal"}):
+        classes = a_modal.get("class", [])
+        classes.append("modal-gw4")
+
+        href = a_modal.get("href")
+
+        if a_modal.has_attr('href'):
+            del a_modal.attrs['href']
+
+        if a_modal.has_attr('data-toggle'):
+            del a_modal.attrs['data-toggle']
+
+        a_modal['data-bs-toggle'] = 'modal'
+        a_modal['data-bs-target'] = href
+
+    for div_modal in soup.find_all("div", class_="modal"):
+        classes = a_modal.get("class", [])
+        classes.append("modal-gw4")
+
+        id_modal = div_modal.get("id")
+
+        new_div_modal = str('<div class="modal fade" id="' + id_modal + '" tabindex="-1" aria-hidden="true">')
+
+        new_div_modal += str('<div class="modal-dialog">')
+        new_div_modal += str('<div class="modal-content">')
+        new_div_modal += str('<div class="modal-header">')
+
+        for header_modal in div_modal.find_all("div", class_="modal-header"):
+            for h_modal in header_modal.find_all(["h2", "h3", "h4"]):
+                new_div_modal += str('<h5 class="modal-title">' + h_modal.text + '</h5>')
+                break
+
+        new_div_modal += str('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>')
+        new_div_modal += str('</div>')
+        new_div_modal += str('<div class="modal-body">')
+
+        for header_modal in div_modal.find_all("div", class_="modal-header"):
+            for content in header_modal.contents:
+                not_header = content.name not in ["h2", "h3", "h4"]
+                not_close = True
+
+                try:
+                    not_close = 'close' not in content.attrs['class']
+                except:
+                    pass
+
+                if not_header and not_close:
+                    new_div_modal += str(content)
+
+        for body_modal in div_modal.find_all("div", class_="modal-body"):
+            for content in body_modal.contents:
+                new_div_modal += str(content)
+
+        new_div_modal += str('</div>')
+        new_div_modal += str('</div>')
+        new_div_modal += str('</div>')
+        new_div_modal += str('</div>')
+
+        div_modal.replace_with(BeautifulSoup(new_div_modal, "html.parser"))
+
+        if istext:
+            return soup.decode()
+        else:
+            return soup
+
 def fix_ul_thumbnails(text, obj=None):
     """Modify ul thumbnails old to new bootstrap"""
     if not text:
@@ -657,6 +735,9 @@ def html_fixer(text, obj=None, old_portal_url=None):
 
     if soup.find_all("div", {"class": "carousel"}):
         soup = fix_carousel(soup, obj)
+
+    if soup.find_all("div", {"class": "modal"}):
+        soup = fix_modal(soup, obj)
 
     soup = fix_modify_class(soup, obj)
     soup = fix_modify_image_gw4(soup, obj)
