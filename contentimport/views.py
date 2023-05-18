@@ -139,7 +139,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_modal, fix_ul_thumbnails, fix_ul_full4]
+        fixers = [fix_modal, fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_ul_thumbnails, fix_ul_full4]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -725,6 +725,9 @@ def html_fixer(text, obj=None, old_portal_url=None):
         else:
             pass
 
+    if soup.find_all("div", {"class": "modal"}):
+        soup = fix_modal(soup, obj)
+
     if soup.find_all("div", {"class": "beautytab"}):
         soup = fix_nav_tabs_box(soup, obj)
 
@@ -736,9 +739,6 @@ def html_fixer(text, obj=None, old_portal_url=None):
 
     if soup.find_all("div", {"class": "carousel"}):
         soup = fix_carousel(soup, obj)
-
-    if soup.find_all("div", {"class": "modal"}):
-        soup = fix_modal(soup, obj)
 
     soup = fix_modify_class(soup, obj)
     soup = fix_modify_image_gw4(soup, obj)
