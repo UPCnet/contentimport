@@ -442,65 +442,66 @@ def fix_modal(text, obj=None):
         text = text.prettify()
         istext = False
 
-    for a_modal in soup.find_all("a", attrs={"data-toggle": "modal"}):
-        classes = a_modal.get("class", [])
-        classes.append("modal-gw4")
+    if soup.find_all("div", {"class": "modal"}):
+        for a_modal in soup.find_all("a", attrs={"data-toggle": "modal"}):
+            classes = a_modal.get("class", [])
+            if classes:
+                classes.append("modal-gw4")
+            else:
+                a_modal['class'] = ["modal-gw4"]
 
-        href = a_modal.get("href")
+            href = a_modal.get("href")
 
-        if a_modal.has_attr('href'):
-            del a_modal.attrs['href']
+            if a_modal.has_attr('href'):
+                del a_modal.attrs['href']
 
-        if a_modal.has_attr('data-toggle'):
-            del a_modal.attrs['data-toggle']
+            if a_modal.has_attr('data-toggle'):
+                del a_modal.attrs['data-toggle']
 
-        a_modal['data-bs-toggle'] = 'modal'
-        a_modal['data-bs-target'] = href
+            a_modal['data-bs-toggle'] = 'modal'
+            a_modal['data-bs-target'] = href
 
-    for div_modal in soup.find_all("div", class_="modal"):
-        classes = a_modal.get("class", [])
-        classes.append("modal-gw4")
+        for div_modal in soup.find_all("div", class_="modal"):
+            id_modal = div_modal.get("id")
 
-        id_modal = div_modal.get("id")
+            new_div_modal = str('<div class="modal fade modal-gw4" id="' + id_modal + '" tabindex="-1" aria-hidden="true">')
 
-        new_div_modal = str('<div class="modal fade" id="' + id_modal + '" tabindex="-1" aria-hidden="true">')
+            new_div_modal += str('<div class="modal-dialog">')
+            new_div_modal += str('<div class="modal-content">')
+            new_div_modal += str('<div class="modal-header">')
 
-        new_div_modal += str('<div class="modal-dialog">')
-        new_div_modal += str('<div class="modal-content">')
-        new_div_modal += str('<div class="modal-header">')
+            for header_modal in div_modal.find_all("div", class_="modal-header"):
+                for h_modal in header_modal.find_all(["h2", "h3", "h4"]):
+                    new_div_modal += str('<h5 class="modal-title">' + h_modal.text + '</h5>')
+                    break
 
-        for header_modal in div_modal.find_all("div", class_="modal-header"):
-            for h_modal in header_modal.find_all(["h2", "h3", "h4"]):
-                new_div_modal += str('<h5 class="modal-title">' + h_modal.text + '</h5>')
-                break
+            new_div_modal += str('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>')
+            new_div_modal += str('</div>')
+            new_div_modal += str('<div class="modal-body">')
 
-        new_div_modal += str('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>')
-        new_div_modal += str('</div>')
-        new_div_modal += str('<div class="modal-body">')
+            for header_modal in div_modal.find_all("div", class_="modal-header"):
+                for content in header_modal.contents:
+                    not_header = content.name not in ["h2", "h3", "h4"]
+                    not_close = True
 
-        for header_modal in div_modal.find_all("div", class_="modal-header"):
-            for content in header_modal.contents:
-                not_header = content.name not in ["h2", "h3", "h4"]
-                not_close = True
+                    try:
+                        not_close = 'close' not in content.attrs['class']
+                    except:
+                        pass
 
-                try:
-                    not_close = 'close' not in content.attrs['class']
-                except:
-                    pass
+                    if not_header and not_close:
+                        new_div_modal += str(content)
 
-                if not_header and not_close:
+            for body_modal in div_modal.find_all("div", class_="modal-body"):
+                for content in body_modal.contents:
                     new_div_modal += str(content)
 
-        for body_modal in div_modal.find_all("div", class_="modal-body"):
-            for content in body_modal.contents:
-                new_div_modal += str(content)
+            new_div_modal += str('</div>')
+            new_div_modal += str('</div>')
+            new_div_modal += str('</div>')
+            new_div_modal += str('</div>')
 
-        new_div_modal += str('</div>')
-        new_div_modal += str('</div>')
-        new_div_modal += str('</div>')
-        new_div_modal += str('</div>')
-
-        div_modal.replace_with(BeautifulSoup(new_div_modal, "html.parser"))
+            div_modal.replace_with(BeautifulSoup(new_div_modal, "html.parser"))
 
         if istext:
             return soup.decode()
