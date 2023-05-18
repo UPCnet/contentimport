@@ -503,6 +503,9 @@ def fix_modal(text, obj=None):
 
             div_modal.replace_with(BeautifulSoup(new_div_modal, "html.parser"))
 
+            msg = "Fixed html fix_modal {}".format(obj.absolute_url())
+            logger.info(msg)
+
     if istext:
         return soup.decode()
     else:
