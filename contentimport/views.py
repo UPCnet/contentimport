@@ -503,10 +503,10 @@ def fix_modal(text, obj=None):
 
             div_modal.replace_with(BeautifulSoup(new_div_modal, "html.parser"))
 
-        if istext:
-            return soup.decode()
-        else:
-            return soup
+    if istext:
+        return soup.decode()
+    else:
+        return soup
 
 def fix_ul_thumbnails(text, obj=None):
     """Modify ul thumbnails old to new bootstrap"""
