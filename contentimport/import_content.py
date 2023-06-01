@@ -32,6 +32,7 @@ VIEW_MAPPING = {
 
 PORTAL_TYPE_MAPPING = {
     "Topic": "Collection",
+    "Window": "Document",
 }
 
 REVIEW_STATE_MAPPING = {}
@@ -67,6 +68,7 @@ IMPORTED_TYPES = [
     "genweb.tfemarket.market",
     "genweb.tfemarket.offer",
     "genweb.tfemarket.application",
+    "Window",
 ]
 
 ALLOWED_TYPES = [
@@ -348,6 +350,18 @@ class CustomImportContent(ImportContent):
         item["query"] = fix_collection_query(item.pop("query", []))
         if not item["query"]:
             logger.info(f"Create collection without query: {item['@id']}")
+
+        return item
+
+    def dict_hook_window(self, item):
+        # Migrar los contenidos Products.windowZ a un Iframe dentro de una página
+        if item["@type"] == "Window":
+            item["@type"] = "Document"
+            if item["page_height"] != '' or item["page_width"] != '':
+                item["text"] = '<iframe loading="lazy" height="' + item["page_height"] + '" width="' + item["page_width"] + '" src='+ item["remoteUrl"] + '></iframe>'
+            else:
+                 item["text"] = '<div class="responsive-iframe-container"><iframe class="responsive-iframe" loading="lazy" src='+ item["remoteUrl"] + '></iframe></div>'
+            item.pop('layout', None)
 
         return item
 
