@@ -139,7 +139,7 @@ class ImportAll(BrowserView):
             else:
                 logger.info(f"Missing file: {path}")
 
-        fixers = [fix_modal, fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_ul_thumbnails, fix_ul_full4]
+        fixers = [fix_modal, fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_iframe_loading_lazy, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_ul_thumbnails, fix_ul_full4]
         results = fix_html_in_content_fields(fixers=fixers)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
@@ -599,6 +599,30 @@ def fix_modify_class(text, obj=None):
     else:
         return soup
 
+def fix_iframe_loading_lazy(text, obj=None):
+    """Modificar classes bootstrap"""
+    if not text:
+        return text
+
+    if isinstance(text, str):
+        soup = BeautifulSoup(text, "html.parser")
+        istext = True
+    else:
+        soup = text
+        istext = False
+
+    for tag in soup.find_all("iframe"):
+        loading = tag.get("loading", [])
+        if loading == []:
+            tag.attrs.update({"loading":"lazy"})
+        msg = "Fixed html fix_iframe_loading_lazy {}".format(obj.absolute_url())
+        logger.info(msg)
+
+    if istext:
+        return soup.decode()
+    else:
+        return soup
+
 def fix_modify_image_gw4(text, obj=None):
     """Modify image genweb 4"""
     if not text:
@@ -753,6 +777,7 @@ def html_fixer(text, obj=None, old_portal_url=None):
     soup = fix_modify_image_gw4(soup, obj)
     soup = fix_ul_thumbnails(soup, obj)
     soup = fix_ul_full4(soup, obj)
+    soup = fix_iframe_loading_lazy(soup, obj)
 
     #FI Migration genweb
     return soup.decode()
