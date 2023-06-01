@@ -174,6 +174,9 @@ def fix_img_icon_blanc(text, obj=None):
     soup = BeautifulSoup(text, "html.parser")
     for tag in soup.find_all("img"):
         classes = tag.get("class", [])
+        loading = tag.get("loading", [])
+        if loading == []:
+            tag.attrs.update({"loading":"lazy"})
         if "link_blank" in classes:
             # delete image
             tag.decompose()
@@ -722,6 +725,9 @@ def html_fixer(text, obj=None, old_portal_url=None):
     #Migration genweb
     for tag in soup.find_all("img"):
         classes = tag.get("class", [])
+        loading = tag.get("loading", [])
+        if loading == []:
+            tag.attrs.update({"loading":"lazy"})
         if "link_blank" in classes:
             # delete image
             tag.decompose()
