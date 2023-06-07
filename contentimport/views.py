@@ -44,6 +44,7 @@ CLASS_MODIFY = {
     "taulaRegistres": "table table-stripped",
     "xlsdf": "xls",
     "carousel slide": "carousel slide gw4-carousel",
+    "thumbnail": "img-thumbnail",
 }
 
 IMAGE_MODIFY = {
