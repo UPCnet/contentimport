@@ -328,12 +328,18 @@ def fix_accordion(text, obj=None):
                         href_sin = '#'
                         continue
                 data_parent = div_head.a.get("data-parent")
-                new_h2 = str('<h2 class="accordion-header" id="' + href_sin + 'Heading"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="' + href + '" aria-expanded="false" aria-controls="' + href + '">' + div_head.a.get_text() + '</button></h2>')
+                if div_head.find_all("a", {"class": "collapsed"}):
+                    new_h2 = str('<h2 class="accordion-header" id="' + href_sin + 'Heading"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="' + href + '" aria-expanded="false" aria-controls="' + href + '">' + div_head.a.get_text() + '</button></h2>')
+                else:
+                    new_h2 = str('<h2 class="accordion-header" id="' + href_sin + 'Heading"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="' + href + '" aria-expanded="true" aria-controls="' + href + '">' + div_head.a.get_text() + '</button></h2>')
                 soup_h2 =  BeautifulSoup(new_h2, "html.parser")
                 new_tag_h2 = soup_h2.find_all("h2")
                 div_head.replace_with(new_tag_h2[0])
             for div_body in div_accordion_item.find_all("div", class_="accordion-body"):
                 classes = div_body.get("class", [])
+                if 'in' in classes:
+                    classes.append("show")
+                    classes.remove("in")
                 classes.append("accordion-collapse")
                 classes.remove("accordion-body")
                 div_body.attrs.update({"aria-labelledby": href_sin + "Heading"})
