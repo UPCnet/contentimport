@@ -401,7 +401,6 @@ def fix_carousel(text, obj=None):
                     classes = div_carousel_item.get("class", [])
                     classes.append("carousel-item")
                     classes.remove("item")
-                    div_carousel_item.attrs.update({"data-bs-interval": 10000})
                     for image in div_carousel_item.find_all("img"):
                         classes = image.get("class", [])
                         classes.append("d-block")
