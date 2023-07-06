@@ -40,7 +40,7 @@ CLASS_MODIFY = {
     "span10": "col-md-10",
     "span11": "col-md-11",
     "span12": "col-md-12",
-    "lead": "card p-3 text-bg-light mb-4",
+    "lead": "border p-3 text-bg-light mb-4",
     "taulaRegistres": "table table-stripped",
     "xlsdf": "xls",
     "carousel slide": "carousel slide gw4-carousel",
