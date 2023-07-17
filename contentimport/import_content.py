@@ -256,7 +256,7 @@ class CustomImportContent(ImportContent):
 
     def set_uuid(self, item, obj):
         uuid = item.get("UID")
-        if '-' in uuid:
+        if '-ca' in uuid or '-es' in uuid or '-en' in uuid:
             uuid = uuid.split('-')[:-1][0]
         if not uuid:
             return obj.UID()
