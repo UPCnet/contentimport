@@ -93,6 +93,9 @@ def register_portlets(obj, item):
                         )
                     )
                     continue
+            if portlet_data["type"] == 'portlets.Navigation':
+                portlet_data['assignment']['no_icons'] = True
+                portlet_data['assignment']['no_thumbs'] = True
             # FI Migration genweb
 
             # 1. Create the assignment
