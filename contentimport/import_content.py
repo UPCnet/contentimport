@@ -1,19 +1,29 @@
+from Acquisition import aq_base
 from App.config import getConfiguration
-from collective.exportimport.import_content import ImportContent
-from plone import api
-from collective.exportimport import _
+from DateTime import DateTime
+from Products.CMFPlone.utils import _createObjectByType
 from ZPublisher.HTTPRequest import FileUpload
+from collective.exportimport import _
+from collective.exportimport.import_content import ImportContent
+from collective.exportimport.import_content import fix_portal_type
+from datetime import datetime
+from datetime import timedelta
+from plone import api
+from plone.dexterity.interfaces import IDexterityFTI
+from plone.restapi.interfaces import IDeserializeFromJson
 from six.moves.urllib.parse import unquote
 from six.moves.urllib.parse import urlparse
-from zope.component import getUtility
-from plone.dexterity.interfaces import IDexterityFTI
 from zope.annotation.interfaces import IAnnotations
+from zope.component import getMultiAdapter
+from zope.component import getUtility
 
-import logging
-import json
-import os
-import transaction
+import dateutil
 import ijson
+import json
+import logging
+import os
+import random
+import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -384,6 +394,210 @@ class CustomImportContent(ImportContent):
             return
 
         return item
+
+    def import_new_content(self, data):  # noqa: C901
+        added = []
+
+        if getattr(data, "len", None):
+            logger.info(u"Importing {} items".format(len(data)))
+        else:
+            logger.info(u"Importing data")
+        for index, item in enumerate(data, start=1):
+            if self.limit and len(added) >= self.limit:
+                break
+
+            uuid = item.get("UID")
+            if uuid and uuid in self.DROP_UIDS:
+                continue
+
+            if not self.must_process(item["@id"]):
+                continue
+
+            if not index % 100:
+                logger.info("Imported {} items...".format(index))
+                transaction.savepoint()
+
+            new_id = unquote(item["@id"]).split("/")[-1]
+            if new_id != item["id"]:
+                logger.info(
+                    u"Conflicting ids in url ({}) and id ({}). Using {}".format(
+                        new_id, item["id"], new_id
+                    )
+                )
+                item["id"] = new_id
+
+            self.safe_portal_type = fix_portal_type(item["@type"])
+            item = self.handle_broken(item)
+            if not item:
+                continue
+            item = self.handle_dropped(item)
+            if not item:
+                continue
+            item = self.global_dict_hook(item)
+            if not item:
+                continue
+
+            # portal_type might change during a hook
+            self.safe_portal_type = fix_portal_type(item["@type"])
+            item = self.custom_dict_hook(item)
+            if not item:
+                continue
+
+            self.safe_portal_type = fix_portal_type(item["@type"])
+            container = self.handle_container(item)
+
+            if not container:
+                logger.warning(
+                    u"No container (parent was {}) found for {} {}".format(
+                        item["parent"]["@type"], item["@type"], item["@id"]
+                    )
+                )
+                continue
+
+            if not getattr(aq_base(container), "isPrincipiaFolderish", False):
+                logger.warning(
+                    u"Container {} for {} is not folderish".format(
+                        container.absolute_url(), item["@id"]
+                    )
+                )
+                continue
+
+            factory_kwargs = item.get("factory_kwargs", {})
+
+            # Handle existing content
+            self.update_existing = False
+            if item["id"] in container:
+                if self.handle_existing_content == 0:
+                    # Skip
+                    logger.info(
+                        u"{} ({}) already exists. Skipping it.".format(
+                            item["id"], item["@id"]
+                        )
+                    )
+                    continue
+
+                elif self.handle_existing_content == 1:
+                    # Replace content before creating it new
+                    logger.info(
+                        u"{} ({}) already exists. Replacing it.".format(
+                            item["id"], item["@id"]
+                        )
+                    )
+                    api.content.delete(container[item["id"]], check_linkintegrity=False)
+
+                elif self.handle_existing_content == 2:
+                    # Update existing item
+                    logger.info(
+                        u"{} ({}) already exists. Updating it.".format(
+                            item["id"], item["@id"]
+                        )
+                    )
+                    self.update_existing = True
+                    new = container[item["id"]]
+
+                else:
+                    # Create with new id. Speed up by using random id.
+                    duplicate = item["id"]
+                    item["id"] = "{}-{}".format(item["id"], random.randint(1000, 9999))
+                    logger.info(
+                        u"{} ({}) already exists. Created as {}".format(
+                            duplicate, item["@id"], item["id"]
+                        )
+                    )
+
+            if self.import_old_revisions and item.get("exportimport.versions"):
+                # TODO: refactor into import_item to prevent duplicattion
+                new = self.import_versions(container, item)
+                if new:
+                    added.append(new.absolute_url())
+                if self.commit and not len(added) % self.commit:
+                    self.commit_hook(added, index)
+                continue
+
+            if not self.update_existing:
+                # create without checking constrains and permissions
+                new = _createObjectByType(
+                    item["@type"], container, item["id"], **factory_kwargs
+                )
+
+            try:
+                new = self.handle_new_object(item, index, new)
+
+                added.append(new.absolute_url())
+
+                if self.commit and not len(added) % self.commit:
+                    self.commit_hook(added, index)
+            except Exception as e:
+                item_id = item['@id'].split('/')[-1]
+                #Genweb6 comentamos que no borre el item asi no borra imagen rota
+                #container.manage_delObjects(item_id)
+                logger.warning(e)
+                logger.warning("Didn't add %s %s", item["@type"], item["@id"], exc_info=True)
+                continue
+
+        return added
+
+    def handle_new_object(self, item, index, new):
+
+        new, item = self.global_obj_hook_before_deserializing(new, item)
+
+        # import using plone.restapi deserializers
+        deserializer = getMultiAdapter((new, self.request), IDeserializeFromJson)
+        self.request["BODY"] = json.dumps(item)
+        try:
+            new = deserializer(validate_all=False)
+        except Exception:
+            # Genweb6 añadimos imagen aunque este rota
+            from plone.namedfile.file import NamedBlobImage
+            new.image = NamedBlobImage(data=item['image']['data'], filename=item['image']['filename'])
+            logger.warning("Cannot deserialize %s %s", item["@type"], item["@id"], exc_info=True)
+
+        # Blobs can be exported as only a path in the blob storage.
+        # It seems difficult to dynamically use a different deserializer,
+        # based on whether or not there is a blob_path somewhere in the item.
+        # So handle this case with a separate method.
+        self.import_blob_paths(new, item)
+        self.import_constrains(new, item)
+
+        uuid = self.set_uuid(item, new)
+
+        if uuid != item.get("UID"):
+            # Happens only when we import content that doesn't have a UID
+            # for instance when importing from non Plone systems.
+            logger.info(
+                "Created new UID for item %s with type %s.",
+                item["@id"],
+                item["@type"]
+            )
+            item["UID"] = uuid
+
+        self.global_obj_hook(new, item)
+        self.custom_obj_hook(new, item)
+
+        # Try to set the original review_state
+        self.import_review_state(new, item)
+
+        # Import workflow_history last to drop entries created during import
+        self.import_workflow_history(new, item)
+
+        # Set modification and creation-date as a custom attribute as last step.
+        # These are reused and dropped in ResetModifiedAndCreatedDate
+        modified = item.get("modified", item.get("modification_date", None))
+        if modified:
+            modification_date = DateTime(dateutil.parser.parse(modified))
+            new.modification_date = modification_date
+            new.aq_base.modification_date_migrated = modification_date
+        created = item.get("created", item.get("creation_date", None))
+        if created:
+            creation_date = DateTime(dateutil.parser.parse(created))
+            new.creation_date = creation_date
+            new.aq_base.creation_date_migrated = creation_date
+        logger.info(
+            "Created item #{}: {} {}".format(
+                index, item["@type"], new.absolute_url()
+            )
+        )
+        return new
 
 def fix_collection_query(query):
     fixed_query = []
