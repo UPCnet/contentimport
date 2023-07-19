@@ -45,6 +45,8 @@ CLASS_MODIFY = {
     "xlsdf": "xls",
     "carousel slide": "carousel slide gw4-carousel",
     "thumbnail": "img-thumbnail",
+    "image-left": "float-start pe-3 pb-3",
+    "image-right": "float-end ps-3 pb-3",
 }
 
 IMAGE_MODIFY = {
