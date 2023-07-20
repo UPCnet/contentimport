@@ -546,11 +546,15 @@ class CustomImportContent(ImportContent):
         self.request["BODY"] = json.dumps(item)
         try:
             new = deserializer(validate_all=False)
-        except Exception:
-            # Genweb6 añadimos imagen aunque este rota
-            from plone.namedfile.file import NamedBlobImage
-            new.image = NamedBlobImage(data=item['image']['data'], filename=item['image']['filename'])
-            logger.warning("Cannot deserialize %s %s", item["@type"], item["@id"], exc_info=True)
+        except Exception as e:
+            # Genweb6 añadimos titulo aunque no tenga
+            if str(e) == "[{'message': 'Required input is missing.', 'field': 'title', 'error': 'ValidationError'}]":
+                new.title = item["id"]
+            else:
+                # Genweb6 añadimos imagen aunque este rota
+                from plone.namedfile.file import NamedBlobImage
+                new.image = NamedBlobImage(data=item['image']['data'], filename=item['image']['filename'])
+                logger.warning("Cannot deserialize %s %s", item["@type"], item["@id"], exc_info=True)
 
         # Blobs can be exported as only a path in the blob storage.
         # It seems difficult to dynamically use a different deserializer,
