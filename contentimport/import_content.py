@@ -550,6 +550,7 @@ class CustomImportContent(ImportContent):
             # Genweb6 añadimos titulo aunque no tenga
             if str(e) == "[{'message': 'Required input is missing.', 'field': 'title', 'error': 'ValidationError'}]":
                 new.title = item["id"]
+                logger.warning("Required input is missing - Cannot title %s", item["@id"])
             else:
                 # Genweb6 añadimos imagen aunque este rota
                 from plone.namedfile.file import NamedBlobImage

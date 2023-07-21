@@ -46,7 +46,7 @@ class ImportControlpanels(BrowserView):
         return self.index()
 
     def import_controlpanels(self, data):
-      
+
         registry = queryUtility(IRegistry)
         for key, value in data["controlpanel"]["genweb6.core.controlpanels.footer.IFooterSettings"].items():
             from genweb6.core.controlpanels.footer import IFooterSettings
@@ -82,7 +82,7 @@ class ImportControlpanels(BrowserView):
             from plone.base.interfaces.controlpanel import ISiteSchema
             registry = getUtility(IRegistry)
             sitesettings = registry.forInterface(ISiteSchema, prefix="plone", check=False)
-            setattr(sitesettings, key, value)            
+            setattr(sitesettings, key, value)
             logger.info(f"Imported record {key}: {value} to controlpanel: plone.app.controlpanel.site.ISiteSchema")
 
         for key, value in data["controlpanel"]["plone.formwidget.recaptcha.interfaces.IReCaptchaSettings"].items():
@@ -90,6 +90,13 @@ class ImportControlpanels(BrowserView):
             recaptchasettings = registry.forInterface(IReCaptchaSettings)
             setattr(recaptchasettings, key, value)
             logger.info(f"Imported record {key}: {value} to controlpanel: plone.formwidget.recaptcha.interfaces.IReCaptchaSettings")
+
+        for key, value in data["controlpanel"]["plone.app.multilingual"].items():
+            from Products.CMFCore.utils import getToolByName
+            site = api.portal.get()
+            registry_tool = getToolByName(site, "portal_registry")
+            registry_tool['plone.default_language'] = value
+            logger.info(f"Imported record {key}: {value} to controlpanel: plone.app.multilingual.browser.interfaces.ICreateTranslation")
 
         if "genweb6.tfemarket.controlpanels.tfemarket.ITfemarketSettings" in data["controlpanel"]:
             for key, value in data["controlpanel"]["genweb6.tfemarket.controlpanels.tfemarket.ITfemarketSettings"].items():
