@@ -41,6 +41,7 @@ CLASS_MODIFY = {
     "span11": "col-md-11",
     "span12": "col-md-12",
     "lead": "border p-3 text-bg-light mb-4",
+    "fitxa": "border-top border-bottom p-3 text-bg-light mb-4",
     "taulaRegistres": "table table-stripped",
     "xlsdf": "xls",
     "carousel slide": "carousel slide gw4-carousel",
