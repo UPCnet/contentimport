@@ -96,7 +96,7 @@ class ImportControlpanels(BrowserView):
             site = api.portal.get()
             registry_tool = getToolByName(site, "portal_registry")
             registry_tool['plone.default_language'] = value
-            logger.info(f"Imported record {key}: {value} to controlpanel: plone.app.multilingual.browser.interfaces.ICreateTranslation")
+            logger.info(f"Imported record {key}: {value} to controlpanel: plone.app.multilingual")
 
         if "genweb6.tfemarket.controlpanels.tfemarket.ITfemarketSettings" in data["controlpanel"]:
             for key, value in data["controlpanel"]["genweb6.tfemarket.controlpanels.tfemarket.ITfemarketSettings"].items():

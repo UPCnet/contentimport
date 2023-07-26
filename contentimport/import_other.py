@@ -93,6 +93,22 @@ def register_portlets(obj, item):
                         )
                     )
                     continue
+            if portlet_data["type"] == 'plone.portlet.collection.Collection':
+                path = portlet_data["assignment"]['target_collection']
+                mountpoint_id = obj.getPhysicalPath()[1]
+                item_path = '/' + mountpoint_id + '/' + api.portal.get().id + path
+                result = pc.unrestrictedSearchResults(path=item_path)
+                obj = result[0].getObject()
+                uid = obj.UID()
+                try:
+                    portlet_data["assignment"]["uid"] = uid
+                except:
+                    logger.error(
+                        u"Could not import portlet data {} for item_path {} on {}".format(
+                            portlet_data, item_path, obj.absolute_url()
+                        )
+                    )
+                    continue
             if portlet_data["type"] == 'portlets.Navigation':
                 portlet_data['assignment']['no_icons'] = True
                 portlet_data['assignment']['no_thumbs'] = True
@@ -149,12 +165,20 @@ def register_portlets(obj, item):
                     try:
                         value = deserializer(value)
                     except Exception as e:
-                        logger.info(
-                            u"Could not import portlet data {} for field {} on {}: {}".format(
-                                value, field, obj.absolute_url(), str(e)
+                        if portlet_data["type"] == 'plone.portlet.collection.Collection' and '<InterfaceClass plone.uuid.interfaces.IUUID>' in str(e):
+                            field.set(assignment, value)
+                            logger.info(
+                                u"Added {} '{}' to {} of {}".format(
+                                    portlet_type, name, manager_name, obj.absolute_url()
+                                )
                             )
-                        )
-                        continue
+                        else:
+                            logger.info(
+                                u"Could not import portlet data {} for field {} on {}: {}".format(
+                                    value, field, obj.absolute_url(), str(e)
+                                )
+                            )
+                            continue
                 field.set(assignment, value)
 
             logger.info(
