@@ -109,8 +109,11 @@ def register_portlets(obj, item):
                         )
                     )
                     continue
-            if portlet_data["type"] == 'portlets.Navigation':
+            if portlet_data["type"] == 'portlets.Navigation' or portlet_data["type"] == 'plone.portlet.collection.Collection':
                 portlet_data['assignment']['no_icons'] = True
+                portlet_data['assignment']['no_thumbs'] = True
+
+            if portlet_data["type"] == 'portlets.Recent':
                 portlet_data['assignment']['no_thumbs'] = True
             # FI Migration genweb
 
