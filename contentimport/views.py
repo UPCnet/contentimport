@@ -408,6 +408,7 @@ def fix_carousel(text, obj=None):
                         classes = image.get("class", [])
                         classes.append("d-block")
                         classes.append("w-100")
+                        classes.append("disable-auto-proportions")
                     for div_carousel_caption in div_carousel_item.find_all("div", class_="carousel-caption"):
                         try:
                             classesh4 = div_carousel_caption.h4.get("class", [])
