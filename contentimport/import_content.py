@@ -367,10 +367,11 @@ class CustomImportContent(ImportContent):
         # Migrar los contenidos Products.windowZ a un Iframe dentro de una página
         if item["@type"] == "Window":
             item["@type"] = "Document"
+            remoteURL = item["remoteUrl"].replace('http://', 'https://')
             if item["page_height"] != '' or item["page_width"] != '':
-                item["text"] = '<iframe loading="lazy" height="' + item["page_height"] + '" width="' + item["page_width"] + '" src='+ item["remoteUrl"] + '></iframe>'
+                item["text"] = '<iframe loading="lazy" height="' + item["page_height"] + '" width="' + item["page_width"] + '" src='+ remoteURL + '></iframe>'
             else:
-                 item["text"] = '<div class="responsive-iframe-container"><iframe class="responsive-iframe" loading="lazy" src='+ item["remoteUrl"] + '></iframe></div>'
+                 item["text"] = '<div class="responsive-iframe-container"><iframe class="responsive-iframe" loading="lazy" src='+ remoteURL + '></iframe></div>'
             item.pop('layout', None)
 
         return item
