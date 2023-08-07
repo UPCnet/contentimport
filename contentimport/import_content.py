@@ -96,7 +96,9 @@ IMPORTED_TYPES = [
     "genweb.ens.persona_contacte",
     "genweb.ens.representant",
     "genweb.ens.unitat",
-    "Scholarship"
+    "Scholarship",
+    "serveitic",
+    "notificaciotic"
 ]
 
 ALLOWED_TYPES = [
@@ -138,7 +140,9 @@ ALLOWED_TYPES = [
     "genweb.ens.persona_contacte",
     "genweb.ens.representant",
     "genweb.ens.unitat",
-    "Scholarship"
+    "Scholarship",
+    "serveitic",
+    "notificaciotic"
 ]
 
 CUSTOMVIEWFIELDS_MAPPING = {
