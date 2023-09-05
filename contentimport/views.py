@@ -48,6 +48,7 @@ CLASS_MODIFY = {
     "thumbnail": "img-thumbnail",
     "image-left": "float-start pe-3 pb-3",
     "image-right": "float-end ps-3 pb-3",
+    "icon-map-marker": "bi bi-globe",
 }
 
 IMAGE_MODIFY = {
