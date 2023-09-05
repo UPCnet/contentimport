@@ -184,6 +184,9 @@ def fix_img_icon_blanc(text, obj=None):
         if "link_blank" in classes:
             # delete image
             tag.decompose()
+        if "img_blank" in classes:
+            # delete image
+            tag.decompose()
         else:
             continue
     return soup.decode()
