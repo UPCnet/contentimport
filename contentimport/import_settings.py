@@ -45,8 +45,18 @@ class ImportSettings(BrowserView):
     def import_settings(self, data):
         installer = get_installer(self.context)
         for addon in data["addons"]:
-            if addon == "genweb.tfemarket":
+            if addon == "genweb.scholarship":
+                addon = "genweb6.scholarship"
+            elif addon == "genweb.tfemarket":
                 addon = "genweb6.tfemarket"
+            elif addon == "genweb.ens":
+                addon = "genweb6.ens"
+            elif addon == "genweb.serveistic":
+                addon = "genweb6.serveistic"
+            elif addon == "genweb.patents":
+                addon = "genweb6.patents"
+            elif addon == "genweb.esports":
+                addon = "genweb6.esports"
             if not installer.is_product_installed(addon) and installer.is_product_installable(addon):
                 installer.install_product(addon)
                 logger.info(f"Installed addon {addon}")
