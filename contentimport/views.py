@@ -60,6 +60,7 @@ IMAGE_MODIFY = {
     "/car1.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
     "/car2.jpg": "++theme++genweb6.theme/img/sample/turtle.jpeg",
     "/mostra.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
+    "/capcalera.jpg": "++theme++genweb6.theme/img/capcalera.jpg",
     "/sampleimg1.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
     "/sampleimg2.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
     "/sampleimg3.jpg": "++theme++genweb6.theme/img/sample/wolf.jpeg",
