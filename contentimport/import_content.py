@@ -427,8 +427,11 @@ class CustomImportContent(ImportContent):
                 fixed_fields.append(field)
         if fixed_fields:
             item["customViewFields"] = fixed_fields
-
-        item["query"] = fix_collection_query(item.pop("query", []))
+        try:
+            item["query"] = fix_collection_query(item.pop("query", []))
+        except:
+            logger.info(f"Drop collection: {item['@id']}")
+            return
 
         if not item["query"]:
             logger.info(f"Drop collection without query: {item['@id']}")
