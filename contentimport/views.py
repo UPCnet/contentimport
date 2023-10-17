@@ -350,7 +350,11 @@ def fix_accordion(text, obj=None):
                     classes.remove("in")
                 classes.append("accordion-collapse")
                 classes.remove("accordion-body")
-                div_body.attrs.update({"aria-labelledby": href_sin + "Heading"})
+                try:
+                    div_body.attrs.update({"aria-labelledby": href_sin + "Heading"})
+                except:
+                    href_sin = '#'
+                    div_body.attrs.update({"aria-labelledby": href_sin + "Heading"})
                 div_body.attrs.update({"data-bs-parent": data_parent})
             for div_inner in div_accordion_item.find_all("div", class_="accordion-inner"):
                 classes = div_inner.get("class", [])
