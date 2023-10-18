@@ -1,3 +1,4 @@
+from collective.exportimport.import_content import filesystem_walker
 from Acquisition import aq_base
 from App.config import getConfiguration
 from DateTime import DateTime
@@ -163,7 +164,8 @@ class CustomImportContent(ImportContent):
         return_json=False,
         limit=None,
         server_file=None,
-        iterator=None
+        iterator=None,
+        server_directory=False,
     ):
         request = self.request
         self.limit = limit
@@ -240,6 +242,11 @@ class CustomImportContent(ImportContent):
         if not jsonfile and iterator:
             self.start()
             msg = self.do_import(iterator)
+            api.portal.show_message(msg, self.request)
+
+        if server_directory:
+            self.start()
+            msg = self.do_import(filesystem_walker(server_directory))
             api.portal.show_message(msg, self.request)
 
         self.finish()

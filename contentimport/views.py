@@ -119,8 +119,10 @@ class ImportAll(BrowserView):
         view = api.content.get_view("import_content", portal, request)
         request.form["form.submitted"] = True
         request.form["commit"] = 500
-        path_domain = Path(directory) / f"{portal.id}.json"
-        view(jsonfile=path_domain.read_text(), return_json=True)
+        #path_domain = Path(directory) / f"{portal.id}.json"
+        #view(jsonfile=path_domain.read_text(), return_json=True )
+        path_domain = Path(directory) / f"{portal.id}/"
+        view(server_directory=path_domain, return_json=True )
         transaction.commit()
 
         other_imports = [
