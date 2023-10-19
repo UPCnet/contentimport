@@ -327,7 +327,7 @@ def fix_accordion(text, obj=None):
             classes = div_accordion_item.get("class", [])
             classes.append("accordion-item")
             classes.remove("accordion-group")
-            for div_head in div_accordion_item.find_all("div", class_="accordion-heading"):
+            for div_head in div_accordion_item.find_all(class_="accordion-heading"):
                 for div_head_a in div_head.find_all("a"):
                     href = div_head_a.get("href")
                     try:
