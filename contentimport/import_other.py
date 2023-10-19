@@ -26,6 +26,7 @@ from collective.exportimport.import_other import ImportTranslations
 from collective.exportimport.import_other import link_translations
 from genweb6.core.controlpanels.header import IHeaderSettings
 from plone.registry.interfaces import IRegistry
+from genweb6.core.portlets.new_existing_content.new_existing_content import validate_externalurl
 # FI Migration genweb
 import json
 import logging
@@ -65,6 +66,11 @@ def register_portlets(obj, item):
         for portlet_data in portlets:
             # Migration genweb portlet new_existing_content and multiviewcollection
             pc = api.portal.get_tool('portal_catalog')
+            if portlet_data["type"] == 'genweb.portlets.existing_content':
+                portlet_data["type"] = 'genweb.portlets.new_existing_content'
+                portlet_data["assignment"]["element"] = '#content-core'
+                portlet_data["assignment"]["content_or_url"] = 'EXTERN'
+                portlet_data["assignment"]["external_url"] = portlet_data["assignment"]["url"]
             if portlet_data["type"] == 'genweb.portlets.new_existing_content' and portlet_data["assignment"]['element'] == '#fg-base-edit':
                 portlet_data["assignment"]['element'] = '#content-core'
             if portlet_data["type"] == 'genweb.portlets.new_existing_content' and portlet_data["assignment"]['content_or_url'] == 'INTERN':
