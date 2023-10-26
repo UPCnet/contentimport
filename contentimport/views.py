@@ -209,36 +209,42 @@ def fix_nav_tabs(text, obj=None):
         istext = False
 
     for ul_nav_tabs in soup.find_all("ul", class_="nav nav-tabs"):
-        classes = ul_nav_tabs.get("class", [])
-        classes.append("nav-gw4")
-        classes.append("mb-3")
-        ul_nav_tabs.attrs.update({"role":"tablist"})
-        for li in ul_nav_tabs.find_all("li"):
-            classes = li.get("class", [])
-            href = li.a.get("href")
-            if '#' in href:
-                href_sin = href[1:]
-            if "active" in classes:
-                new_li = str('<li class="nav-item" role="presentation"><button id="' + href_sin + '-tab" class="nav-link active" data-bs-toggle="tab" data-bs-target= ' +  href + ' type="button" aria-selected="true" role="tab" aria-controls=' + href_sin + '>' + li.a.get_text() + '</button></li>')
-                soup_li =  BeautifulSoup(new_li, "html.parser")
-                new_tag_li = soup_li.find_all("li")
-                li.replace_with(new_tag_li[0])
-            else:
-                new_li = str('<li class="nav-item" role="presentation"><button id="' + href_sin + '-tab" class="nav-link" data-bs-toggle="tab" data-bs-target= ' +  href + ' type="button" aria-selected="false" role="tab" aria-controls=' + href_sin + '>' + li.a.get_text() + '</button></li>')
-                soup_li =  BeautifulSoup(new_li, "html.parser")
-                new_tag_li = soup_li.find_all("li")
-                li.replace_with(new_tag_li[0])
-        msg = "Fixed html nav_tabs {}".format(obj.absolute_url())
-        logger.info(msg)
+        try:
+            classes = ul_nav_tabs.get("class", [])
+            classes.append("nav-gw4")
+            classes.append("mb-3")
+            ul_nav_tabs.attrs.update({"role":"tablist"})
+            for li in ul_nav_tabs.find_all("li"):
+                classes = li.get("class", [])
+                href = li.a.get("href")
+                if '#' in href:
+                    href_sin = href[1:]
+                if "active" in classes:
+                    new_li = str('<li class="nav-item" role="presentation"><button id="' + href_sin + '-tab" class="nav-link active" data-bs-toggle="tab" data-bs-target= ' +  href + ' type="button" aria-selected="true" role="tab" aria-controls=' + href_sin + '>' + li.a.get_text() + '</button></li>')
+                    soup_li =  BeautifulSoup(new_li, "html.parser")
+                    new_tag_li = soup_li.find_all("li")
+                    li.replace_with(new_tag_li[0])
+                else:
+                    new_li = str('<li class="nav-item" role="presentation"><button id="' + href_sin + '-tab" class="nav-link" data-bs-toggle="tab" data-bs-target= ' +  href + ' type="button" aria-selected="false" role="tab" aria-controls=' + href_sin + '>' + li.a.get_text() + '</button></li>')
+                    soup_li =  BeautifulSoup(new_li, "html.parser")
+                    new_tag_li = soup_li.find_all("li")
+                    li.replace_with(new_tag_li[0])
+            msg = "Fixed html nav_tabs {}".format(obj.absolute_url())
+            logger.info(msg)
+        except:
+            continue
     for div in soup.find_all("div", class_="tab-content"):
-        for tag in div.find_all("div", class_="tab-pane"):
-            classes = tag.get("class", [])
-            classes.append("fade")
-            tag.attrs.update({"role":"tabpanel"})
-            tag.attrs.update({"aria-labelledby": tag.get("id", []) + "-tab"})
-            tag.attrs.update({"tabindex":"0"})
-            if "active" in classes:
-                classes.append("show")
+        try:
+            for tag in div.find_all("div", class_="tab-pane"):
+                classes = tag.get("class", [])
+                classes.append("fade")
+                tag.attrs.update({"role":"tabpanel"})
+                tag.attrs.update({"aria-labelledby": tag.get("id", []) + "-tab"})
+                tag.attrs.update({"tabindex":"0"})
+                if "active" in classes:
+                    classes.append("show")
+        except:
+            continue
 
     if istext:
         return soup.decode()
@@ -388,69 +394,72 @@ def fix_carousel(text, obj=None):
         istext = False
 
     for div_carousel in soup.find_all("div", class_="carousel"):
-        new_text = str('<div class="template-carousel">' + text + '</div>')
-        soup = BeautifulSoup(new_text, "html.parser")
-        for div_carousel in soup.find_all("div", class_="carousel"):
-            classes = div_carousel.get("class", [])
-            classes.append("carousel-dark")
-            classes.append("mb-2")
-            classes.append("carousel-gw4")
-            for carousel_indicators in div_carousel.find_all("ol", class_="carousel-indicators"):
-                str_new_carousel_indicator_div = str(carousel_indicators).replace('ol', 'div')
-                soup_carousel_indicator_div = BeautifulSoup(str_new_carousel_indicator_div, "html.parser")
-                new_carousel_indicator_div = soup_carousel_indicator_div.find_all("div")
-                carousel_indicators = new_carousel_indicator_div[0]
-                carousel_indicators.replace_with(new_carousel_indicator_div[0])
-                for li_carousel_indicator in carousel_indicators.find_all("li"):
-                    classes = li_carousel_indicator.get("class", [])
-                    if "active" in classes:
-                        new_button_indicator = str('<button type="button" class="active" aria-current="true" data-bs-target="' + li_carousel_indicator.get("data-target") + '" data-bs-slide-to="' + li_carousel_indicator.get("data-slide-to") + '" aria-label="Slide ' + li_carousel_indicator.get("data-slide-to") + '"></button>')
-                        soup_button_indicator =  BeautifulSoup(new_button_indicator, "html.parser")
-                        new_tag_button_indicator = soup_button_indicator.find_all("button")
-                        li_carousel_indicator.replace_with(new_tag_button_indicator[0])
-                    else:
-                        new_button_indicator = str('<button type="button" data-bs-target="' + li_carousel_indicator.get("data-target") + '" data-bs-slide-to="' + li_carousel_indicator.get("data-slide-to") + '" aria-label="Slide ' + li_carousel_indicator.get("data-slide-to") + '"></button>')
-                        soup_button_indicator =  BeautifulSoup(new_button_indicator, "html.parser")
-                        new_tag_button_indicator = soup_button_indicator.find_all("button")
-                        li_carousel_indicator.replace_with(new_tag_button_indicator[0])
-                div_carousel.ol.replace_with(new_carousel_indicator_div[0])
-            for div_carousel_inner in div_carousel.find_all("div", class_="carousel-inner"):
-                for div_carousel_item in div_carousel_inner.find_all("div", class_="item"):
-                    classes = div_carousel_item.get("class", [])
-                    classes.append("carousel-item")
-                    classes.remove("item")
-                    for image in div_carousel_item.find_all("img"):
-                        classes = image.get("class", [])
-                        classes.append("d-block")
-                        classes.append("w-100")
-                        classes.append("disable-auto-proportions")
-                    for div_carousel_caption in div_carousel_item.find_all("div", class_="carousel-caption"):
-                        try:
-                            classesh4 = div_carousel_caption.h4.get("class", [])
-                            classesh4.append("text-truncate")
-                            classesp = div_carousel_caption.p.get("class", [])
-                            classesp.append("text-truncate-2")
-                            classesp.append("mb-1")
-                        except:
-                            continue
-            for a_carousel_control in div_carousel.find_all("a", class_="carousel-control"):
-                href = a_carousel_control.get("href")
-                if '#' in href:
-                    href_sin = href[1:]
-                if "prev" in a_carousel_control.get("data-slide"):
-                    new_button_prev = str('<button class="carousel-control-prev" type="button" data-bs-slide="prev" data-bs-target="' + href + '"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button>')
-                    soup_button_prev =  BeautifulSoup(new_button_prev, "html.parser")
-                    new_tag_button_prev = soup_button_prev.find_all("button")
-                    a_carousel_control.replace_with(new_tag_button_prev[0])
+        try:
+            new_text = str('<div class="template-carousel">' + text + '</div>')
+            soup = BeautifulSoup(new_text, "html.parser")
+            for div_carousel in soup.find_all("div", class_="carousel"):
+                classes = div_carousel.get("class", [])
+                classes.append("carousel-dark")
+                classes.append("mb-2")
+                classes.append("carousel-gw4")
+                for carousel_indicators in div_carousel.find_all("ol", class_="carousel-indicators"):
+                    str_new_carousel_indicator_div = str(carousel_indicators).replace('ol', 'div')
+                    soup_carousel_indicator_div = BeautifulSoup(str_new_carousel_indicator_div, "html.parser")
+                    new_carousel_indicator_div = soup_carousel_indicator_div.find_all("div")
+                    carousel_indicators = new_carousel_indicator_div[0]
+                    carousel_indicators.replace_with(new_carousel_indicator_div[0])
+                    for li_carousel_indicator in carousel_indicators.find_all("li"):
+                        classes = li_carousel_indicator.get("class", [])
+                        if "active" in classes:
+                            new_button_indicator = str('<button type="button" class="active" aria-current="true" data-bs-target="' + li_carousel_indicator.get("data-target") + '" data-bs-slide-to="' + li_carousel_indicator.get("data-slide-to") + '" aria-label="Slide ' + li_carousel_indicator.get("data-slide-to") + '"></button>')
+                            soup_button_indicator =  BeautifulSoup(new_button_indicator, "html.parser")
+                            new_tag_button_indicator = soup_button_indicator.find_all("button")
+                            li_carousel_indicator.replace_with(new_tag_button_indicator[0])
+                        else:
+                            new_button_indicator = str('<button type="button" data-bs-target="' + li_carousel_indicator.get("data-target") + '" data-bs-slide-to="' + li_carousel_indicator.get("data-slide-to") + '" aria-label="Slide ' + li_carousel_indicator.get("data-slide-to") + '"></button>')
+                            soup_button_indicator =  BeautifulSoup(new_button_indicator, "html.parser")
+                            new_tag_button_indicator = soup_button_indicator.find_all("button")
+                            li_carousel_indicator.replace_with(new_tag_button_indicator[0])
+                    div_carousel.ol.replace_with(new_carousel_indicator_div[0])
+                for div_carousel_inner in div_carousel.find_all("div", class_="carousel-inner"):
+                    for div_carousel_item in div_carousel_inner.find_all("div", class_="item"):
+                        classes = div_carousel_item.get("class", [])
+                        classes.append("carousel-item")
+                        classes.remove("item")
+                        for image in div_carousel_item.find_all("img"):
+                            classes = image.get("class", [])
+                            classes.append("d-block")
+                            classes.append("w-100")
+                            classes.append("disable-auto-proportions")
+                        for div_carousel_caption in div_carousel_item.find_all("div", class_="carousel-caption"):
+                            try:
+                                classesh4 = div_carousel_caption.h4.get("class", [])
+                                classesh4.append("text-truncate")
+                                classesp = div_carousel_caption.p.get("class", [])
+                                classesp.append("text-truncate-2")
+                                classesp.append("mb-1")
+                            except:
+                                continue
+                for a_carousel_control in div_carousel.find_all("a", class_="carousel-control"):
+                    href = a_carousel_control.get("href")
+                    if '#' in href:
+                        href_sin = href[1:]
+                    if "prev" in a_carousel_control.get("data-slide"):
+                        new_button_prev = str('<button class="carousel-control-prev" type="button" data-bs-slide="prev" data-bs-target="' + href + '"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button>')
+                        soup_button_prev =  BeautifulSoup(new_button_prev, "html.parser")
+                        new_tag_button_prev = soup_button_prev.find_all("button")
+                        a_carousel_control.replace_with(new_tag_button_prev[0])
 
-                if "next" in a_carousel_control.get("data-slide"):
-                    new_button_next = str('<button class="carousel-control-next" type="button" data-bs-slide="next" data-bs-target="' + href + '"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button>')
-                    soup_button_next =  BeautifulSoup(new_button_next, "html.parser")
-                    new_tag_button_next = soup_button_next.find_all("button")
-                    a_carousel_control.replace_with(new_tag_button_next[0])
+                    if "next" in a_carousel_control.get("data-slide"):
+                        new_button_next = str('<button class="carousel-control-next" type="button" data-bs-slide="next" data-bs-target="' + href + '"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button>')
+                        soup_button_next =  BeautifulSoup(new_button_next, "html.parser")
+                        new_tag_button_next = soup_button_next.find_all("button")
+                        a_carousel_control.replace_with(new_tag_button_next[0])
 
-            msg = "Fixed html fix_carousel {}".format(obj.absolute_url())
-            logger.info(msg)
+                msg = "Fixed html fix_carousel {}".format(obj.absolute_url())
+                logger.info(msg)
+        except:
+            continue
 
     if istext:
         return soup.decode()
@@ -472,67 +481,73 @@ def fix_modal(text, obj=None):
 
     if soup.find_all("div", {"class": "modal"}):
         for a_modal in soup.find_all("a", attrs={"data-toggle": "modal"}):
-            classes = a_modal.get("class", [])
-            if classes:
-                classes.append("modal-gw4")
-            else:
-                a_modal['class'] = ["modal-gw4"]
+            try:
+                classes = a_modal.get("class", [])
+                if classes:
+                    classes.append("modal-gw4")
+                else:
+                    a_modal['class'] = ["modal-gw4"]
 
-            href = a_modal.get("href")
+                href = a_modal.get("href")
 
-            if a_modal.has_attr('href'):
-                del a_modal.attrs['href']
+                if a_modal.has_attr('href'):
+                    del a_modal.attrs['href']
 
-            if a_modal.has_attr('data-toggle'):
-                del a_modal.attrs['data-toggle']
+                if a_modal.has_attr('data-toggle'):
+                    del a_modal.attrs['data-toggle']
 
-            a_modal['data-bs-toggle'] = 'modal'
-            a_modal['data-bs-target'] = href
+                a_modal['data-bs-toggle'] = 'modal'
+                a_modal['data-bs-target'] = href
+            except:
+                continue
 
         for div_modal in soup.find_all("div", class_="modal"):
-            id_modal = div_modal.get("id")
+            try:
+                id_modal = div_modal.get("id")
 
-            new_div_modal = str('<div class="modal fade modal-gw4" id="' + id_modal + '" tabindex="-1" aria-hidden="true">')
+                new_div_modal = str('<div class="modal fade modal-gw4" id="' + id_modal + '" tabindex="-1" aria-hidden="true">')
 
-            new_div_modal += str('<div class="modal-dialog">')
-            new_div_modal += str('<div class="modal-content">')
-            new_div_modal += str('<div class="modal-header">')
+                new_div_modal += str('<div class="modal-dialog">')
+                new_div_modal += str('<div class="modal-content">')
+                new_div_modal += str('<div class="modal-header">')
 
-            for header_modal in div_modal.find_all("div", class_="modal-header"):
-                for h_modal in header_modal.find_all(["h2", "h3", "h4"]):
-                    new_div_modal += str('<h5 class="modal-title">' + h_modal.text + '</h5>')
-                    break
+                for header_modal in div_modal.find_all("div", class_="modal-header"):
+                    for h_modal in header_modal.find_all(["h2", "h3", "h4"]):
+                        new_div_modal += str('<h5 class="modal-title">' + h_modal.text + '</h5>')
+                        break
 
-            new_div_modal += str('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>')
-            new_div_modal += str('</div>')
-            new_div_modal += str('<div class="modal-body">')
+                new_div_modal += str('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>')
+                new_div_modal += str('</div>')
+                new_div_modal += str('<div class="modal-body">')
 
-            for header_modal in div_modal.find_all("div", class_="modal-header"):
-                for content in header_modal.contents:
-                    not_header = content.name not in ["h2", "h3", "h4"]
-                    not_close = True
+                for header_modal in div_modal.find_all("div", class_="modal-header"):
+                    for content in header_modal.contents:
+                        not_header = content.name not in ["h2", "h3", "h4"]
+                        not_close = True
 
-                    try:
-                        not_close = 'close' not in content.attrs['class']
-                    except:
-                        pass
+                        try:
+                            not_close = 'close' not in content.attrs['class']
+                        except:
+                            pass
 
-                    if not_header and not_close:
+                        if not_header and not_close:
+                            new_div_modal += str(content)
+
+                for body_modal in div_modal.find_all("div", class_="modal-body"):
+                    for content in body_modal.contents:
                         new_div_modal += str(content)
 
-            for body_modal in div_modal.find_all("div", class_="modal-body"):
-                for content in body_modal.contents:
-                    new_div_modal += str(content)
+                new_div_modal += str('</div>')
+                new_div_modal += str('</div>')
+                new_div_modal += str('</div>')
+                new_div_modal += str('</div>')
 
-            new_div_modal += str('</div>')
-            new_div_modal += str('</div>')
-            new_div_modal += str('</div>')
-            new_div_modal += str('</div>')
+                div_modal.replace_with(BeautifulSoup(new_div_modal, "html.parser"))
 
-            div_modal.replace_with(BeautifulSoup(new_div_modal, "html.parser"))
-
-            msg = "Fixed html fix_modal {}".format(obj.absolute_url())
-            logger.info(msg)
+                msg = "Fixed html fix_modal {}".format(obj.absolute_url())
+                logger.info(msg)
+            except:
+                continue
 
     if istext:
         return soup.decode()
@@ -552,16 +567,19 @@ def fix_ul_thumbnails(text, obj=None):
         istext = False
 
     for ul_thumbnails in soup.find_all("ul", class_="thumbnails"):
-        classes = ul_thumbnails.get("class", [])
-        if ul_thumbnails.parent.name == 'div':
-            if 'row' in ul_thumbnails.parent.attrs['class']:
-                classes.append("row")
-                classes.append("ms-0")
-                classes.append("list-unstyled")
-                classes.remove("thumbnails")
+        try:
+            classes = ul_thumbnails.get("class", [])
+            if ul_thumbnails.parent.name == 'div':
+                if 'row' in ul_thumbnails.parent.attrs['class']:
+                    classes.append("row")
+                    classes.append("ms-0")
+                    classes.append("list-unstyled")
+                    classes.remove("thumbnails")
 
-        msg = "Fixed html fix_ul_thumbnails {}".format(obj.absolute_url())
-        logger.info(msg)
+            msg = "Fixed html fix_ul_thumbnails {}".format(obj.absolute_url())
+            logger.info(msg)
+        except:
+            continue
 
     if istext:
         return soup.decode()
@@ -581,16 +599,19 @@ def fix_ul_full4(text, obj=None):
         istext = False
 
     for ul_full4 in soup.find_all("ul", class_="full4"):
-        classes = ul_full4.get("class", [])
-        if ul_full4.parent.name == 'div':
-            if 'row' in ul_full4.parent.attrs['class']:
-                classes.append("row")
-                classes.append("ms-0")
-                classes.append("list-unstyled")
-                classes.remove("full4")
+        try:
+            classes = ul_full4.get("class", [])
+            if ul_full4.parent.name == 'div':
+                if 'row' in ul_full4.parent.attrs['class']:
+                    classes.append("row")
+                    classes.append("ms-0")
+                    classes.append("list-unstyled")
+                    classes.remove("full4")
 
-        msg = "Fixed html fix_ul_full4 {}".format(obj.absolute_url())
-        logger.info(msg)
+            msg = "Fixed html fix_ul_full4 {}".format(obj.absolute_url())
+            logger.info(msg)
+        except:
+            continue
 
     if istext:
         return soup.decode()
@@ -612,13 +633,16 @@ def fix_modify_class(text, obj=None):
 
     for olds, news in CLASS_MODIFY.items():
         for tag in soup.find_all(class_=olds):
-            classes = tag.get("class", [])
-            for old in olds.split():
-                classes.remove(old)
-            for new in news.split():
-                classes.append(new)
-            msg = "Fixed html class {} in object {}".format(news, obj.absolute_url())
-            logger.info(msg)
+            try:
+                classes = tag.get("class", [])
+                for old in olds.split():
+                    classes.remove(old)
+                for new in news.split():
+                    classes.append(new)
+                msg = "Fixed html class {} in object {}".format(news, obj.absolute_url())
+                logger.info(msg)
+            except:
+                continue
     if istext:
         return soup.decode()
     else:
@@ -637,11 +661,14 @@ def fix_iframe_loading_lazy(text, obj=None):
         istext = False
 
     for tag in soup.find_all("iframe"):
-        loading = tag.get("loading", [])
-        if loading == []:
-            tag.attrs.update({"loading":"lazy"})
-        msg = "Fixed html fix_iframe_loading_lazy {}".format(obj.absolute_url())
-        logger.info(msg)
+        try:
+            loading = tag.get("loading", [])
+            if loading == []:
+                tag.attrs.update({"loading":"lazy"})
+            msg = "Fixed html fix_iframe_loading_lazy {}".format(obj.absolute_url())
+            logger.info(msg)
+        except:
+            continue
 
     if istext:
         return soup.decode()
@@ -663,20 +690,23 @@ def fix_modify_image_gw4(text, obj=None):
 
     for image in soup.find_all("img"):
         for olds, news in IMAGE_MODIFY.items():
-            if olds in image["src"]:
-                image.attrs.update({"src": news})
-                try:
-                    if olds in image.parent.attrs["href"]:
-                        image.parent.attrs.update({"href": obj.portal_url() + '/' + news})
-                except:
-                    continue
-                try:
-                    if olds in image.parent.parent.attrs["href"]:
-                        image.parent.parent.attrs.update({"href": obj.portal_url() + '/' + news})
-                except:
-                    continue
-                msg = "Fixed html image {} in object {}".format(news, obj.absolute_url())
-                logger.info(msg)
+            try:
+                if olds in image["src"]:
+                    image.attrs.update({"src": news})
+                    try:
+                        if olds in image.parent.attrs["href"]:
+                            image.parent.attrs.update({"href": obj.portal_url() + '/' + news})
+                    except:
+                        continue
+                    try:
+                        if olds in image.parent.parent.attrs["href"]:
+                            image.parent.parent.attrs.update({"href": obj.portal_url() + '/' + news})
+                    except:
+                        continue
+                    msg = "Fixed html image {} in object {}".format(news, obj.absolute_url())
+                    logger.info(msg)
+            except:
+                continue
     if istext:
         return soup.decode()
     else:
