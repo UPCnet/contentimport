@@ -103,20 +103,28 @@ def register_portlets(obj, item):
                     continue
             if portlet_data["type"] == 'plone.portlet.collection.Collection':
                 path = portlet_data["assignment"]['target_collection']
-                mountpoint_id = obj.getPhysicalPath()[1]
-                item_path = '/' + mountpoint_id + '/' + api.portal.get().id + path
-                result = pc.unrestrictedSearchResults(path=item_path)
-                obj = result[0].getObject()
-                uid = obj.UID()
-                try:
-                    portlet_data["assignment"]["uid"] = uid
-                except:
+                if path == None:
                     logger.error(
-                        u"Could not import portlet data {} for item_path {} on {}".format(
-                            portlet_data, item_path, obj.absolute_url()
+                            u"Could not import portlet data {} on {}".format(
+                                portlet_data, obj.absolute_url()
+                            )
                         )
-                    )
                     continue
+                else:
+                    mountpoint_id = obj.getPhysicalPath()[1]
+                    item_path = '/' + mountpoint_id + '/' + api.portal.get().id + path
+                    result = pc.unrestrictedSearchResults(path=item_path)
+                    obj = result[0].getObject()
+                    uid = obj.UID()
+                    try:
+                        portlet_data["assignment"]["uid"] = uid
+                    except:
+                        logger.error(
+                            u"Could not import portlet data {} for item_path {} on {}".format(
+                                portlet_data, item_path, obj.absolute_url()
+                            )
+                        )
+                        continue
             if portlet_data["type"] == 'portlets.Navigation' or portlet_data["type"] == 'plone.portlet.collection.Collection':
                 portlet_data['assignment']['no_icons'] = True
                 portlet_data['assignment']['no_thumbs'] = True
@@ -304,7 +312,10 @@ class CustomImportTranslations(ImportTranslations):
                     canonical = obj
                 else:
                     translation = obj
-                    link_translations(canonical, translation, lang)
+                    try:
+                        link_translations(canonical, translation, lang)
+                    except:
+                        continue
         logger.info(
             u"Imported {} translation-groups. For {} groups we found only one item. {} groups without content dropped".format(
                 imported, len(less_than_2), len(empty)
