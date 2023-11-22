@@ -76,4 +76,11 @@
       permission="cmf.ManagePortal"
       />
 
+    <browser:page
+      name="import_ordering"
+      for="zope.interface.Interface"
+      class=".import_other.CustomImportOrdering"
+      layer="contentimport.interfaces.IContentimportLayer"
+      permission="cmf.ManagePortal"
+      />
 </configure>

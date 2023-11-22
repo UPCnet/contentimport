@@ -20,6 +20,8 @@ from ZPublisher.HTTPRequest import FileUpload
 from z3c.relationfield.schema import RelationChoice
 from z3c.form import button, field, interfaces, util
 import zope.component
+from OFS.interfaces import IOrderedContainer
+from collective.exportimport.import_other import ImportOrdering
 from collective.exportimport.import_other import ImportPortlets
 from collective.exportimport.import_other import ImportLocalRoles
 from collective.exportimport.import_other import ImportTranslations
@@ -321,3 +323,29 @@ class CustomImportTranslations(ImportTranslations):
                 imported, len(less_than_2), len(empty)
             )
         )
+
+class CustomImportOrdering(ImportOrdering):
+    """Import ordering"""
+
+    def import_ordering(self, data):
+        results = 0
+        total = len(data)
+        for index, item in enumerate(data, start=1):
+            try:
+                obj = api.content.get(UID=item["uuid"])
+                if not obj:
+                    continue
+                ordered = IOrderedContainer(obj.__parent__, None)
+                if not ordered:
+                    continue
+                ordered.moveObjectToPosition(obj.getId(), item["order"])
+                if not index % 1000:
+                    logger.info(
+                        u"Ordered {} ({}%) of {} items".format(
+                            index, round(index / total * 100, 2), total
+                        )
+                    )
+                results += 1
+            except:
+                continue
+        return results

@@ -149,7 +149,7 @@ class ImportAll(BrowserView):
                 logger.info(f"Missing file: {path}")
 
         fixers = [fix_modal, fix_modify_class, fix_modify_image_gw4, fix_img_icon_blanc, fix_iframe_loading_lazy, fix_nav_tabs_box, fix_nav_tabs, fix_accordion, fix_carousel, fix_ul_thumbnails, fix_ul_full4]
-        results = fix_html_in_content_fields(fixers=fixers)
+        results = fix_html_in_content_fields(fixers=fixers, apply_default_fixer=False)
         msg = "Fixed html for {} content items".format(results)
         logger.info(msg)
         transaction.commit()
