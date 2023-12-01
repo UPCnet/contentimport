@@ -104,3 +104,24 @@ class ImportControlpanels(BrowserView):
                 tfesettings = registry.forInterface(ITfemarketSettings)
                 setattr(tfesettings, key, value)
                 logger.info(f"Imported record {key}: {value} to controlpanel: genweb6.tfemarket.controlpanels.tfemarket.ITfemarketSettings")
+
+        if "genweb6.upc.controlpanels.bus_soa.IBusSOASettings" in data["controlpanel"]:
+            for key, value in data["controlpanel"]["genweb6.upc.controlpanels.bus_soa.IBusSOASettings"].items():
+                from genweb6.upc.controlpanels.bus_soa import IBusSOASettings
+                bussoasettings = registry.forInterface(IBusSOASettings)
+                setattr(bussoasettings, key, value)
+                logger.info(f"Imported record {key}: {value} to controlpanel: genweb6.upc.controlpanels.bus_soa.IBusSOASettings")
+
+        if "genweb6.upc.controlpanels.identitat_digital.IIdentitatDigitalSettings" in data["controlpanel"]:
+            for key, value in data["controlpanel"]["genweb6.upc.controlpanels.identitat_digital.IIdentitatDigitalSettings"].items():
+                from genweb6.upc.controlpanels.identitat_digital import IIdentitatDigitalSettings
+                identitaldigitalsettings = registry.forInterface(IIdentitatDigitalSettings)
+                setattr(identitaldigitalsettings, key, value)
+                logger.info(f"Imported record {key}: {value} to controlpanel: genweb6.upc.controlpanels.identitat_digital.IIdentitatDigitalSettings")
+
+        if "genweb6.serveistic.controlpanels.serveistic.IServeisTICControlPanelSettings" in data["controlpanel"]:
+            for key, value in data["controlpanel"]["genweb6.serveistic.controlpanels.serveistic.IServeisTICControlPanelSettings"].items():
+                from genweb6.serveistic.controlpanels.serveistic import IServeisTICControlPanelSettings
+                serveisticsettings = registry.forInterface(IServeisTICControlPanelSettings)
+                setattr(serveisticsettings, key, value)
+                logger.info(f"Imported record {key}: {value} to controlpanel: genweb6.serveistic.controlpanels.serveistic.IServeisTICControlPanelSettings")
