@@ -269,7 +269,7 @@ def fix_nav_tabs_box(text, obj=None):
         classes.append("nav-box-gw4")
         classes.append("mb-3")
         classes.remove("beautytab")
-        for tag in div_beautytab.find_all("ul"):
+        for tag in div_beautytab.select("ul#myTab"):
             classes = tag.get("class", [])
             if classes:
                 classes.append("nav")
@@ -295,6 +295,7 @@ def fix_nav_tabs_box(text, obj=None):
                     soup_li =  BeautifulSoup(new_li, "html.parser")
                     new_tag_li = soup_li.find_all("li")
                     li.replace_with(new_tag_li[0])
+
         for div_content in div_beautytab.find_all("div", class_="tab-content"):
             classes = div_content.get("class", [])
             classes.remove("beautytab-content")
@@ -306,6 +307,7 @@ def fix_nav_tabs_box(text, obj=None):
                 div_tab_pane.attrs.update({"tabindex":"0"})
                 if "active" in classes:
                     classes.append("show")
+
         msg = "Fixed html fix_nav_tabs_box {}".format(obj.absolute_url())
         logger.info(msg)
 
