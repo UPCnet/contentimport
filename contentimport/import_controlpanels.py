@@ -125,3 +125,10 @@ class ImportControlpanels(BrowserView):
                 serveisticsettings = registry.forInterface(IServeisTICControlPanelSettings)
                 setattr(serveisticsettings, key, value)
                 logger.info(f"Imported record {key}: {value} to controlpanel: genweb6.serveistic.controlpanels.serveistic.IServeisTICControlPanelSettings")
+
+        if "genweb6.serveistic.controlpanels.facetes.IServeisTICFacetesControlPanelSettings" in data["controlpanel"]:
+            for key, value in data["controlpanel"]["genweb6.serveistic.controlpanels.facetes.IServeisTICFacetesControlPanelSettings"].items():
+                from genweb6.serveistic.controlpanels.facetes import IServeisTICFacetesControlPanelSettings
+                serveisticfacetessettings = registry.forInterface(IServeisTICFacetesControlPanelSettings)
+                setattr(serveisticfacetessettings, key, value)
+                logger.info(f"Imported record {key}: {value} to controlpanel: genweb6.serveistic.controlpanels.facetes.IServeisTICFacetesControlPanelSettings")
