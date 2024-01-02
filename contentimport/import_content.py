@@ -600,12 +600,21 @@ class CustomImportContent(ImportContent):
         deserializer = getMultiAdapter((new, self.request), IDeserializeFromJson)
         self.request["BODY"] = json.dumps(item)
         try:
-            new = deserializer(validate_all=False)
+            try:
+                new = deserializer(validate_all=False, data=item)
+            except TypeError as error:
+                if 'unexpected keyword argument' in str(error):
+                    self.request["BODY"] = json.dumps(item)
+                    new = deserializer(validate_all=False)
+                else:
+                    raise error
         except Exception as e:
             # Genweb6 añadimos titulo aunque no tenga
             if str(e) == "[{'message': 'Required input is missing.', 'field': 'title', 'error': 'ValidationError'}]":
                 new.title = item["id"]
                 logger.warning("Required input is missing - Cannot title %s", item["@id"])
+            elif "{'message': 'Constraint not satisfied', 'field': 'ca_faceta_1', 'error': 'ValidationError'}" in str(e):
+                pass
             else:
                 # Genweb6 añadimos imagen aunque este rota
                 from plone.namedfile.file import NamedBlobImage
