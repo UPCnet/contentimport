@@ -152,6 +152,17 @@ CUSTOMVIEWFIELDS_MAPPING = {
 
 ANNOTATIONS_KEY = "exportimport.annotations"
 
+FACETES_MAPPING = {
+    "aplicacia3-web": "aplicacio-web",
+    "aplicacia3-descriptori": "aplicacio-descriptori",
+    "aplicacia3-ma2bil": "aplicacio-mobil",
+    "gestia3-i-administracia3": "gestio-i-administracio",
+    "recerca-i-transferancia": "recerca-i-transferencia",
+    "docancia-i-aprenentatge": "docencia-i-aprenentatge",
+    "estudiants-de-grau-i-ma-ster": "estudiants-de-grau-i-master",
+    "personal-dadministracia3-i-serveis": "personal-dadministracio-i-serveis",
+}
+
 class CustomImportContent(ImportContent):
 
     DROP_PATHS = []
@@ -300,6 +311,30 @@ class CustomImportContent(ImportContent):
     def global_obj_hook(self, obj, item):
         item = self.import_annotations(obj, item)
         return item
+
+    def global_obj_hook_before_deserializing(self, obj, item):
+        """Hook to modify the created obj before deserializing the data.
+        Example that applies marker-interfaces:
+
+        for iface_name in item.pop("marker_interfaces", []):
+            iface = resolveDottedName(iface_name)
+            if not iface.providedBy(obj):
+                alsoProvides(obj, iface)
+        return obj, item
+        """
+        if item['@type'] == 'serveitic':
+            allfacetes = ['ca_faceta_1', 'ca_faceta_2', 'ca_faceta_3', 'ca_faceta_4', 'ca_faceta_5', 'ca_faceta_6', 'ca_faceta_7', 'ca_faceta_8', 'es_faceta_1', 'es_faceta_2', 'es_faceta_3', 'es_faceta_4', 'es_faceta_5', 'es_faceta_6', 'es_faceta_7', 'es_faceta_8', 'en_faceta_1', 'en_faceta_2', 'en_faceta_3', 'en_faceta_4', 'en_faceta_5', 'en_faceta_6', 'en_faceta_7', 'en_faceta_8']
+
+            for faceta in allfacetes:
+                values_remove = []
+                for value in item[faceta]:
+                    if value in FACETES_MAPPING:
+                        values_remove.append(value)
+                        item[faceta].append(FACETES_MAPPING[value])
+                facetes_correctas = set(item[faceta]) - set(values_remove)
+                item[faceta] = list(facetes_correctas)
+
+        return obj, item
 
     def global_dict_hook(self, item):
         item["creators"] = [i for i in item.get("creators", []) if i]
@@ -593,7 +628,6 @@ class CustomImportContent(ImportContent):
         return added
 
     def handle_new_object(self, item, index, new):
-
         new, item = self.global_obj_hook_before_deserializing(new, item)
 
         # import using plone.restapi deserializers
@@ -613,8 +647,6 @@ class CustomImportContent(ImportContent):
             if str(e) == "[{'message': 'Required input is missing.', 'field': 'title', 'error': 'ValidationError'}]":
                 new.title = item["id"]
                 logger.warning("Required input is missing - Cannot title %s", item["@id"])
-            elif "{'message': 'Constraint not satisfied', 'field': 'ca_faceta_1', 'error': 'ValidationError'}" in str(e):
-                pass
             else:
                 # Genweb6 añadimos imagen aunque este rota
                 from plone.namedfile.file import NamedBlobImage
