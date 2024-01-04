@@ -323,16 +323,23 @@ class CustomImportContent(ImportContent):
         return obj, item
         """
         if item['@type'] == 'serveitic':
-            allfacetes = ['ca_faceta_1', 'ca_faceta_2', 'ca_faceta_3', 'ca_faceta_4', 'ca_faceta_5', 'ca_faceta_6', 'ca_faceta_7', 'ca_faceta_8', 'es_faceta_1', 'es_faceta_2', 'es_faceta_3', 'es_faceta_4', 'es_faceta_5', 'es_faceta_6', 'es_faceta_7', 'es_faceta_8', 'en_faceta_1', 'en_faceta_2', 'en_faceta_3', 'en_faceta_4', 'en_faceta_5', 'en_faceta_6', 'en_faceta_7', 'en_faceta_8']
+            allfacetes = ['ambit', 'tipologia', 'ubicacio','ca_faceta_1', 'ca_faceta_2', 'ca_faceta_3', 'ca_faceta_4', 'ca_faceta_5', 'ca_faceta_6', 'ca_faceta_7', 'ca_faceta_8', 'es_faceta_1', 'es_faceta_2', 'es_faceta_3', 'es_faceta_4', 'es_faceta_5', 'es_faceta_6', 'es_faceta_7', 'es_faceta_8', 'en_faceta_1', 'en_faceta_2', 'en_faceta_3', 'en_faceta_4', 'en_faceta_5', 'en_faceta_6', 'en_faceta_7', 'en_faceta_8']
 
             for faceta in allfacetes:
                 values_remove = []
-                for value in item[faceta]:
-                    if value in FACETES_MAPPING:
-                        values_remove.append(value)
-                        item[faceta].append(FACETES_MAPPING[value])
-                facetes_correctas = set(item[faceta]) - set(values_remove)
-                item[faceta] = list(facetes_correctas)
+                if item[faceta] != None:
+                    for value in item[faceta]:
+                        if value in FACETES_MAPPING:
+                            values_remove.append(value)
+                            item[faceta].append(FACETES_MAPPING[value])
+                    facetes_correctas = set(item[faceta]) - set(values_remove)
+                    item[faceta] = list(facetes_correctas)
+                    for value in item[faceta]:
+                        if value in FACETES_MAPPING:
+                            values_remove.append(value)
+                            item[faceta].append(FACETES_MAPPING[value])
+                    facetes_correctas = set(item[faceta]) - set(values_remove)
+                    item[faceta] = list(facetes_correctas)
 
         return obj, item
 
