@@ -505,7 +505,7 @@ class CustomImportContent(ImportContent):
         if fixed_fields:
             item["customViewFields"] = fixed_fields
         try:
-            item["query"] = fix_collection_query(item.pop("query", []))
+            item["query"] = fix_collection_query(item.pop("query", []), item)
         except:
             logger.info(f"Drop collection: {item['@id']}")
             return
@@ -540,7 +540,7 @@ class CustomImportContent(ImportContent):
         if fixed_fields:
             item["customViewFields"] = fixed_fields
         try:
-            item["query"] = fix_collection_query(item.pop("query", []))
+            item["query"] = fix_collection_query(item.pop("query", []), item)
         except:
             logger.info(f"Drop collection: {item['@id']}")
             return
@@ -766,7 +766,7 @@ class CustomImportContent(ImportContent):
         )
         return new
 
-def fix_collection_query(query):
+def fix_collection_query(query, item):
     fixed_query = []
 
     indexes_to_fix = [
@@ -775,12 +775,20 @@ def fix_collection_query(query):
         u'Creator',
         u'Subject'
     ]
-    operator_mapping = {
+    operator_mapping_or = {
         # old -> new
         u"plone.app.querystring.operation.selection.is":
             u"plone.app.querystring.operation.selection.any",
         u"plone.app.querystring.operation.string.is":
             u"plone.app.querystring.operation.selection.any",
+    }
+
+    operator_mapping_and = {
+        # old -> new
+        u"plone.app.querystring.operation.selection.is":
+            u"plone.app.querystring.operation.selection.all",
+        u"plone.app.querystring.operation.string.is":
+            u"plone.app.querystring.operation.selection.all",
     }
 
     for crit in query:
@@ -793,9 +801,14 @@ def fix_collection_query(query):
             crit["v"] = "..::1"
 
         if crit["i"] in indexes_to_fix:
-            for old_operator, new_operator in operator_mapping.items():
-                if crit["o"] == old_operator:
-                    crit["o"] = new_operator
+            if item["logical_op"] == "or":
+                for old_operator, new_operator in operator_mapping_or.items():
+                    if crit["o"] == old_operator:
+                        crit["o"] = new_operator
+            if item["logical_op"] == "and":
+                for old_operator, new_operator in operator_mapping_and.items():
+                    if crit["o"] == old_operator:
+                        crit["o"] = new_operator
 
         if crit["i"] == "portal_type":
             # Some types may have changed their names
