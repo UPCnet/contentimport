@@ -713,11 +713,19 @@ class CustomImportContent(ImportContent):
             if str(e) == "[{'message': 'Required input is missing.', 'field': 'title', 'error': 'ValidationError'}]":
                 new.title = item["id"]
                 logger.warning("Required input is missing - Cannot title %s", item["@id"])
+            elif "{'message': 'Constraint not satisfied', 'field': 'degree_id', 'error': 'ValidationError'}" in str(e):
+                new.degree_id = item["degree_id"]
+            elif "{'message': 'Constraint not satisfied', 'field': 'offer_type', 'error': 'ValidationError'}" in str(e):
+                new.offer_type = item["offer_type"]
+            elif "{'message': 'Constraint not satisfied', 'field': 'modality', 'error': 'ValidationError'}" in str(e):
+                new.modality = item["modality"]
             else:
                 # Genweb6 añadimos imagen aunque este rota
                 from plone.namedfile.file import NamedBlobImage
                 new.image = NamedBlobImage(data=item['image']['data'], filename=item['image']['filename'])
-                logger.warning("Cannot deserialize %s %s", item["@type"], item["@id"], exc_info=True)
+                logger.warning("OJO Cannot deserialize %s %s %s", item["@type"], item["@id"], str(e), exc_info=True)
+
+
 
         # Blobs can be exported as only a path in the blob storage.
         # It seems difficult to dynamically use a different deserializer,
