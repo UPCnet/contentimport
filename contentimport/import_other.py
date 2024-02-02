@@ -130,12 +130,12 @@ def register_portlets(obj, item):
             if portlet_data["type"] == 'portlets.Navigation' or portlet_data["type"] == 'plone.portlet.collection.Collection':
                 portlet_data['assignment']['no_icons'] = True
                 portlet_data['assignment']['no_thumbs'] = True
-                registry = queryUtility(IRegistry)
-                header_settings = registry.forInterface(IHeaderSettings)
-                if header_settings.treu_menu_horitzontal == False:
-                    if item["@id"][-2:] == "ca" or item["@id"][-2:] == "es" or item["@id"][-2:] == "en":
-                        portlet_data['assignment']['bottomLevel'] = 0
-                        portlet_data['assignment']['topLevel'] = 2
+                # registry = queryUtility(IRegistry)
+                # header_settings = registry.forInterface(IHeaderSettings)
+                # if header_settings.treu_menu_horitzontal == False:
+                #     if item["@id"][-2:] == "ca" or item["@id"][-2:] == "es" or item["@id"][-2:] == "en":
+                #         portlet_data['assignment']['bottomLevel'] = 0
+                #         portlet_data['assignment']['topLevel'] = 2
 
 
             if portlet_data["type"] == 'portlets.Recent':
