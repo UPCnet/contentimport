@@ -719,6 +719,14 @@ class CustomImportContent(ImportContent):
                 new.offer_type = item["offer_type"]
             elif "{'message': 'Constraint not satisfied', 'field': 'modality', 'error': 'ValidationError'}" in str(e):
                 new.modality = item["modality"]
+            elif "{'message': 'Constraint not satisfied', 'field': 'carrec', 'error': 'ValidationError'}" in str(e):
+                new.carrec = item["carrec"]
+            elif "{'message': 'Constraint not satisfied', 'field': 'title', 'error': 'ValidationError'}" in str(e):
+                new.title = item["title"]
+            elif "{'message': 'Constraint not satisfied', 'field': 'estat', 'error': 'ValidationError'}" in str(e):
+                new.estat = item["estat"]
+            elif "{'message': 'Constraint not satisfied', 'field': 'institution_type', 'error': 'ValidationError'}" in str(e):
+                new.institution_type = item["institution_type"]
             else:
                 # Genweb6 añadimos imagen aunque este rota
                 from plone.namedfile.file import NamedBlobImage
