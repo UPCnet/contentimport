@@ -728,6 +728,7 @@ class CustomImportContent(ImportContent):
             elif "{'message': 'Constraint not satisfied', 'field': 'institution_type', 'error': 'ValidationError'}" in str(e):
                 new.institution_type = item["institution_type"]
             else:
+                logger.error("TODO ERROR : %s", str(e))
                 # Genweb6 añadimos imagen aunque este rota
                 from plone.namedfile.file import NamedBlobImage
                 new.image = NamedBlobImage(data=item['image']['data'], filename=item['image']['filename'])
