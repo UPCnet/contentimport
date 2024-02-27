@@ -90,18 +90,21 @@ def register_portlets(obj, item):
                     )
                     continue
             if portlet_data["type"] == 'genweb.portlets.multiview_collection':
-                path = portlet_data["assignment"]['target_collection']
-                mountpoint_id = obj.getPhysicalPath()[1]
-                item_path = '/' + mountpoint_id + '/' + api.portal.get().id + path
-                result = pc.unrestrictedSearchResults(path=item_path)
                 try:
-                    portlet_data['assignment']['target_collection']=result[0].getObject()
-                except:
-                    logger.error(
-                        u"Could not import portlet data {} for item_path {} on {}".format(
-                            portlet_data, item_path, obj.absolute_url()
+                    path = portlet_data["assignment"]['target_collection']
+                    mountpoint_id = obj.getPhysicalPath()[1]
+                    item_path = '/' + mountpoint_id + '/' + api.portal.get().id + path
+                    result = pc.unrestrictedSearchResults(path=item_path)
+                    try:
+                        portlet_data['assignment']['target_collection']=result[0].getObject()
+                    except:
+                        logger.error(
+                            u"Could not import portlet data {} for item_path {} on {}".format(
+                                portlet_data, item_path, obj.absolute_url()
+                            )
                         )
-                    )
+                        continue
+                except:
                     continue
             if portlet_data["type"] == 'plone.portlet.collection.Collection':
                 path = portlet_data["assignment"]['target_collection']
