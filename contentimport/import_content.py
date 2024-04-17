@@ -220,6 +220,7 @@ FACETES_MAPPING = {
     "gestia3-destudis-de-grau-i-ma-ster-ugm": "gestio-estudis-de-grau-i-master-ugm",
     "gestia3-destudis-de-doctorat-usd": "gestio-estudis-de-doctorat-usd",
     "recerca-i-transferancia-de-resultats-usr": "recerca-i-transferencia-de-resultats-usr",
+    "personal-tacnic-de-gestia3-i-dadministracia3-i": "personal-tecnic-de-gestio-i-dadministracio-i",
 }
 
 class CustomImportContent(ImportContent):
