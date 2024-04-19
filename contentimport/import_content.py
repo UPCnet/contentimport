@@ -790,9 +790,21 @@ def fix_collection_query(query, item):
     indexes_to_fix = [
         u'portal_type',
         u'review_state',
-        u'Creator',
+        u'Creator'
+    ]
+
+    indexes_to_fix_subject = [
         u'Subject'
     ]
+
+    operator_mapping = {
+        "plone.app.querystring.operation.selection.is":
+        "plone.app.querystring.operation.selection.any",
+        # old -> new
+        "plone.app.querystring.operation.string.is":
+        "plone.app.querystring.operation.selection.any",
+    }
+
     operator_mapping_or = {
         # old -> new
         u"plone.app.querystring.operation.selection.is":
@@ -819,6 +831,11 @@ def fix_collection_query(query, item):
             crit["v"] = "..::1"
 
         if crit["i"] in indexes_to_fix:
+            for old_operator, new_operator in operator_mapping.items():
+                if crit["o"] == old_operator:
+                    crit["o"] = new_operator
+
+        if crit["i"] in indexes_to_fix_subject:
             if item["logical_op"] == "or":
                 for old_operator, new_operator in operator_mapping_or.items():
                     if crit["o"] == old_operator:
