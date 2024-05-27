@@ -17,6 +17,8 @@ from six.moves.urllib.parse import urlparse
 from zope.annotation.interfaces import IAnnotations
 from zope.component import getMultiAdapter
 from zope.component import getUtility
+from plone.memoize import ram
+from time import time
 
 import dateutil
 import ijson
@@ -372,6 +374,26 @@ class CustomImportContent(ImportContent):
         item = self.import_annotations(obj, item)
         return item
 
+    @ram.cache(lambda *args: time() // (24 * 60 * 60))
+    def dict_hook_tfe_offer(self, item):
+        from genweb6.tfemarket.utils import genwebTfemarketConfig
+        tfe_tool = genwebTfemarketConfig()
+        titulacions = []
+        for item in tfe_tool.titulacions_table:
+            titulacions.append(item['codi_mec'])
+        if tfe_tool.topics:
+            topics = tfe_tool.topics.split("\r\n")
+        else:
+            topics = []
+        if tfe_tool.tags:
+            tags = tfe_tool.tags.split("\r\n")
+        else:
+            tags = []
+        logger.info(f"Titulacions {titulacions}.")
+        logger.info(f"Topics {topics}.")
+        logger.info(f"Tags {tags}.")
+        return titulacions, topics, tags
+
     def global_obj_hook_before_deserializing(self, obj, item):
         """Hook to modify the created obj before deserializing the data.
         Example that applies marker-interfaces:
@@ -382,8 +404,27 @@ class CustomImportContent(ImportContent):
                 alsoProvides(obj, iface)
         return obj, item
         """
+        if item['@type'] == 'genweb.tfemarket.offer':
+            titulacions, topics, tags = self.dict_hook_tfe_offer(item)
+
+            remove_degree = []
+            for value in item['degree']:
+                if value not in titulacions:
+                    remove_degree.append(value)
+            for value in remove_degree:
+                item['degree'].remove(value)
+                logger.info(f"Remove degree {value}.")
+
+            remove_tags = []
+            for value in item['keys']:
+                if value not in tags:
+                    remove_tags.append(value)
+            for value in remove_tags:
+                item['keys'].remove(value)
+                logger.info(f"Remove keys {value}.")
+
         if item['@type'] == 'serveitic':
-            allfacetes = ['ambit', 'tipologia', 'ubicacio','ca_faceta_1', 'ca_faceta_2', 'ca_faceta_3', 'ca_faceta_4', 'ca_faceta_5', 'ca_faceta_6', 'ca_faceta_7', 'ca_faceta_8', 'es_faceta_1', 'es_faceta_2', 'es_faceta_3', 'es_faceta_4', 'es_faceta_5', 'es_faceta_6', 'es_faceta_7', 'es_faceta_8', 'en_faceta_1', 'en_faceta_2', 'en_faceta_3', 'en_faceta_4', 'en_faceta_5', 'en_faceta_6', 'en_faceta_7', 'en_faceta_8']
+            allfacetes = ['ambit', 'tipologia', 'ubicacio', 'ca_faceta_1', 'ca_faceta_2', 'ca_faceta_3', 'ca_faceta_4', 'ca_faceta_5', 'ca_faceta_6', 'ca_faceta_7', 'ca_faceta_8', 'es_faceta_1', 'es_faceta_2', 'es_faceta_3', 'es_faceta_4', 'es_faceta_5', 'es_faceta_6', 'es_faceta_7', 'es_faceta_8', 'en_faceta_1', 'en_faceta_2', 'en_faceta_3', 'en_faceta_4', 'en_faceta_5', 'en_faceta_6', 'en_faceta_7', 'en_faceta_8']
 
             for faceta in allfacetes:
                 values_remove = []
