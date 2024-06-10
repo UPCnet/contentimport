@@ -27,6 +27,7 @@ import logging
 import os
 import random
 import transaction
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +40,8 @@ VIEW_MAPPING = {
     "folder_listing": "listing_view",
     "folder_summary_view": "summary_view",
     "folder_tabular_view": "tabular_view",
-    "folder_extended" : "listing_view",
-    "article" : "document_view",
+    "folder_extended": "listing_view",
+    "article": "document_view",
 }
 
 PORTAL_TYPE_MAPPING = {
@@ -49,6 +50,8 @@ PORTAL_TYPE_MAPPING = {
 }
 
 REVIEW_STATE_MAPPING = {}
+
+TFE_STATE_MAPPING = []
 
 VERSIONED_TYPES = [
     "Document",
@@ -225,6 +228,7 @@ FACETES_MAPPING = {
     "personal-tacnic-de-gestia3-i-dadministracia3-i": "personal-tecnic-de-gestio-i-dadministracio-i",
 }
 
+
 class CustomImportContent(ImportContent):
 
     DROP_PATHS = []
@@ -350,10 +354,11 @@ class CustomImportContent(ImportContent):
 
         # Handle folderish Documents provided by plone.volto
         fti = getUtility(IDexterityFTI, name="Document")
-        parent_type = "Document" if fti.klass.endswith("FolderishDocument") else "Folder"
+        parent_type = "Document" if fti.klass.endswith(
+            "FolderishDocument") else "Folder"
         # create original structure for imported content
         for element in parent_path:
-            #Migration genweb
+            # Migration genweb
             try:
                 if element not in folder:
                     folder = api.content.create(
@@ -362,11 +367,13 @@ class CustomImportContent(ImportContent):
                         id=element,
                         title=element,
                     )
-                    logger.info(u"Created container %s to hold %s", folder.absolute_url(), item["@id"])
+                    logger.info(u"Created container %s to hold %s",
+                                folder.absolute_url(), item["@id"])
                 else:
                     folder = folder[element]
             except:
-                logger.error(u"NOT Created container %s to hold %s", folder.absolute_url(), item["@id"])
+                logger.error(u"NOT Created container %s to hold %s",
+                             folder.absolute_url(), item["@id"])
 
         return folder
 
@@ -424,7 +431,13 @@ class CustomImportContent(ImportContent):
                 logger.info(f"Remove keys {value}.")
 
         if item['@type'] == 'serveitic':
-            allfacetes = ['ambit', 'tipologia', 'ubicacio', 'ca_faceta_1', 'ca_faceta_2', 'ca_faceta_3', 'ca_faceta_4', 'ca_faceta_5', 'ca_faceta_6', 'ca_faceta_7', 'ca_faceta_8', 'es_faceta_1', 'es_faceta_2', 'es_faceta_3', 'es_faceta_4', 'es_faceta_5', 'es_faceta_6', 'es_faceta_7', 'es_faceta_8', 'en_faceta_1', 'en_faceta_2', 'en_faceta_3', 'en_faceta_4', 'en_faceta_5', 'en_faceta_6', 'en_faceta_7', 'en_faceta_8']
+            allfacetes = ['ambit', 'tipologia', 'ubicacio', 'ca_faceta_1',
+                          'ca_faceta_2', 'ca_faceta_3', 'ca_faceta_4', 'ca_faceta_5',
+                          'ca_faceta_6', 'ca_faceta_7', 'ca_faceta_8', 'es_faceta_1',
+                          'es_faceta_2', 'es_faceta_3', 'es_faceta_4', 'es_faceta_5',
+                          'es_faceta_6', 'es_faceta_7', 'es_faceta_8', 'en_faceta_1',
+                          'en_faceta_2', 'en_faceta_3', 'en_faceta_4', 'en_faceta_5',
+                          'en_faceta_6', 'en_faceta_7', 'en_faceta_8']
 
             for faceta in allfacetes:
                 values_remove = []
@@ -496,15 +509,18 @@ class CustomImportContent(ImportContent):
                     types_fixed.append(PORTAL_TYPE_MAPPING[portal_type])
                 elif portal_type in ALLOWED_TYPES:
                     types_fixed.append(portal_type)
-            item["exportimport.constrains"]["locally_allowed_types"] = list(set(types_fixed))
+            item["exportimport.constrains"]["locally_allowed_types"] = list(
+                set(types_fixed))
 
             types_fixed = []
-            for portal_type in item["exportimport.constrains"]["immediately_addable_types"]:
+            for portal_type in item["exportimport.constrains"][
+                    "immediately_addable_types"]:
                 if portal_type in PORTAL_TYPE_MAPPING:
                     types_fixed.append(PORTAL_TYPE_MAPPING[portal_type])
                 elif portal_type in ALLOWED_TYPES:
                     types_fixed.append(portal_type)
-            item["exportimport.constrains"]["immediately_addable_types"] = list(set(types_fixed))
+            item["exportimport.constrains"]["immediately_addable_types"] = list(
+                set(types_fixed))
 
         # Layouts...
         if item.get("layout") in VIEW_MAPPING:
@@ -563,9 +579,10 @@ class CustomImportContent(ImportContent):
             item["@type"] = "Document"
             remoteURL = item["remoteUrl"].replace('http://', 'https://')
             if item["page_height"] != '' or item["page_width"] != '':
-                item["text"] = '<iframe loading="lazy" height="' + item["page_height"] + '" width="' + item["page_width"] + '" src='+ remoteURL + '></iframe>'
+                item["text"] = '<iframe loading="lazy" height="' + item["page_height"] + \
+                    '" width="' + item["page_width"] + '" src=' + remoteURL + '></iframe>'
             else:
-                 item["text"] = '<div class="responsive-iframe-container"><iframe class="responsive-iframe" loading="lazy" src='+ remoteURL + '></iframe></div>'
+                item["text"] = '<div class="responsive-iframe-container"><iframe class="responsive-iframe" loading="lazy" src=' + remoteURL + '></iframe></div>'
             item.pop('layout', None)
 
         return item
@@ -727,10 +744,13 @@ class CustomImportContent(ImportContent):
                     self.commit_hook(added, index)
             except Exception as e:
                 item_id = item['@id'].split('/')[-1]
-                #Genweb6 comentamos que no borre el item asi no borra imagen rota
-                #container.manage_delObjects(item_id)
+                # Genweb6 comentamos que no borre el item asi no borra imagen rota
+                # container.manage_delObjects(item_id)
                 logger.warning(e)
-                logger.warning("Didn't add %s %s", item["@type"], item["@id"], exc_info=True)
+                logger.warning(
+                    "Didn't add %s %s", item["@type"],
+                    item["@id"],
+                    exc_info=True)
                 continue
 
         return added
@@ -754,7 +774,8 @@ class CustomImportContent(ImportContent):
             # Genweb6 añadimos titulo aunque no tenga
             if str(e) == "[{'message': 'Required input is missing.', 'field': 'title', 'error': 'ValidationError'}]":
                 new.title = item["id"]
-                logger.warning("Required input is missing - Cannot title %s", item["@id"])
+                logger.warning(
+                    "Required input is missing - Cannot title %s", item["@id"])
             elif "{'message': 'Constraint not satisfied', 'field': 'degree_id', 'error': 'ValidationError'}" in str(e):
                 new.degree_id = item["degree_id"]
             elif "{'message': 'Constraint not satisfied', 'field': 'offer_type', 'error': 'ValidationError'}" in str(e):
@@ -769,14 +790,43 @@ class CustomImportContent(ImportContent):
                 new.estat = item["estat"]
             elif "{'message': 'Constraint not satisfied', 'field': 'institution_type', 'error': 'ValidationError'}" in str(e):
                 new.institution_type = item["institution_type"]
+            elif "[{'message': 'Constraint not satisfied', 'field': 'type_codirector', 'error': 'ValidationError'}]" in str(e):
+                logger.error("TODO ERROR type_codirector: %s review_state %s",
+                             item["id"], item["review_state"])
+
+                # Como ahora trato el error ya no hace falta pero si he migrado algun TFE antes de controlar esto puedo mirar si hay cosas mal
+
+                # # Cargar los datos existentes del archivo
+                # try:
+                #     with open('output.json', 'r') as f:
+                #         data = json.load(f)
+                # except FileNotFoundError:
+                #     data = []
+
+                # data.append(
+                #     dict(
+                #         id=item["id"],
+                #         review_state=item["review_state"],
+                #         workflow_history=item["workflow_history"]))
+
+                # # Escribir la lista actualizada en el archivo
+                # with open('output.json', 'w') as f:
+                #     json.dump(data, f)
+
+                # logger.error("TODO ERROR TFE_STATE: %s ", json.dumps(TFE_STATE_MAPPING))
+                new.type_codirector = item["type_codirector"]
             else:
                 logger.error("TODO ERROR : %s", str(e))
                 # Genweb6 añadimos imagen aunque este rota
                 from plone.namedfile.file import NamedBlobImage
-                new.image = NamedBlobImage(data=item['image']['data'], filename=item['image']['filename'])
-                logger.warning("OJO Cannot deserialize %s %s %s", item["@type"], item["@id"], str(e), exc_info=True)
-
-
+                new.image = NamedBlobImage(
+                    data=item['image']['data'],
+                    filename=item['image']['filename'])
+                logger.warning(
+                    "OJO Cannot deserialize %s %s %s", item["@type"],
+                    item["@id"],
+                    str(e),
+                    exc_info=True)
 
         # Blobs can be exported as only a path in the blob storage.
         # It seems difficult to dynamically use a different deserializer,
@@ -824,6 +874,7 @@ class CustomImportContent(ImportContent):
             )
         )
         return new
+
 
 def fix_collection_query(query, item):
     fixed_query = []
@@ -910,7 +961,7 @@ def fix_collection_query(query, item):
     return fixed_query
 
 
-#No lo utilizo son ejemplos de Philip Bauer
+# No lo utilizo son ejemplos de Philip Bauer
 #     def start(self):
 #         self.items_without_parent = []
 #         portal_types = api.portal.get_tool("portal_types")
