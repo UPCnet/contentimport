@@ -104,7 +104,8 @@ IMPORTED_TYPES = [
     "genweb.ens.unitat",
     "Scholarship",
     "serveitic",
-    "notificaciotic"
+    "notificaciotic",
+    "documentrrhh"
 ]
 
 ALLOWED_TYPES = [
@@ -148,7 +149,8 @@ ALLOWED_TYPES = [
     "genweb.ens.unitat",
     "Scholarship",
     "serveitic",
-    "notificaciotic"
+    "notificaciotic",
+    "documentrrhh"
 ]
 
 CUSTOMVIEWFIELDS_MAPPING = {
