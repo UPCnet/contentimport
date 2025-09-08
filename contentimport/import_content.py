@@ -105,7 +105,20 @@ IMPORTED_TYPES = [
     "Scholarship",
     "serveitic",
     "notificaciotic",
-    "documentrrhh"
+    "documentrrhh",
+    "genweb.organs.organgovern",
+    "genweb.organs.sessio",
+    "genweb.organs.punt",
+    "genweb.organs.subpunt",
+    "genweb.organs.acta",
+    "genweb.organs.organsfolder",
+    "genweb.organs.file",
+    "genweb.organs.document",
+    "genweb.organs.audio",
+    "genweb.organs.annex",
+    "genweb.organs.acord",
+    "genweb.organs.propostapunt",
+    "genweb.organs.votacioacord"
 ]
 
 ALLOWED_TYPES = [
@@ -150,7 +163,20 @@ ALLOWED_TYPES = [
     "Scholarship",
     "serveitic",
     "notificaciotic",
-    "documentrrhh"
+    "documentrrhh",
+    "genweb.organs.organgovern",
+    "genweb.organs.sessio",
+    "genweb.organs.punt",
+    "genweb.organs.subpunt",
+    "genweb.organs.acta",
+    "genweb.organs.organsfolder",
+    "genweb.organs.file",
+    "genweb.organs.document",
+    "genweb.organs.audio",
+    "genweb.organs.annex",
+    "genweb.organs.acord",
+    "genweb.organs.propostapunt",
+    "genweb.organs.votacioacord"
 ]
 
 CUSTOMVIEWFIELDS_MAPPING = {
