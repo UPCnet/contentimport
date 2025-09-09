@@ -404,6 +404,126 @@ class CustomImportContent(ImportContent):
                              folder.absolute_url(), item["@id"])
 
         return folder
+    def start(self):
+        # Parche global durante toda la importación para evitar recursión en
+        # membres_convidats_default_factory (genweb.organs.acta).
+        super_start = getattr(super(), "start", None)
+        if callable(super_start):
+            super_start()
+        self._acta_patch_applied = False
+        self._acta_saved_factory_fn = None
+        self._acta_field = None
+        self._acta_saved_default = None
+        self._fti_schema_field = None
+        self._fti_schema_saved_default = None
+        self._acta_saved_factories_map = {}
+        self._fti_saved_field_defaults_map = {}
+        try:
+            from genweb.organs.content.acta import acta as acta_mod  # type: ignore
+            from genweb.organs.content.acta.acta import IActa  # type: ignore
+            from plone.app.textfield.value import RichTextValue
+            from plone.dexterity.interfaces import IDexterityFTI
+            from zope.component import getUtility
+            def _safe_factory(*args, **kwargs):
+                return RichTextValue("", mimeType="text/html", outputMimeType="text/x-html-safe")
+            # Monkeypatch: TODAS las funciones *_default_factory del módulo acta
+            for name in dir(acta_mod):
+                if not name.endswith("_default_factory"):
+                    continue
+                func = getattr(acta_mod, name)
+                if callable(func):
+                    self._acta_saved_factories_map[name] = func
+                    setattr(acta_mod, name, _safe_factory)
+            # Monkeypatch del field en interfaz
+            self._acta_field = IActa.get("membresConvidats", None)
+            if self._acta_field is not None and hasattr(self._acta_field, "defaultFactory"):
+                self._acta_saved_default = getattr(self._acta_field, "defaultFactory", None)
+                self._acta_field.defaultFactory = _safe_factory
+            # Monkeypatch del field en esquema activo del FTI
+            try:
+                fti = getUtility(IDexterityFTI, name="genweb.organs.acta")
+                schema = fti.lookupSchema()
+                # Parchear defaultFactory de todos los campos del esquema si apuntan a funciones del módulo
+                field_names = []
+                try:
+                    # zope.schema getfields
+                    field_names = [n for n in dir(schema) if not n.startswith('_')]
+                except Exception:
+                    pass
+                # Mejor: iterar sobre __dict__ del schema si es posible
+                for field_name in set(field_names + [
+                    'membresConvidats', 'llistaExcusats', 'llistaNoAssistens',
+                    'membresConvocats', 'ordenDelDia', 'acta',
+                ]):
+                    try:
+                        field = None
+                        if hasattr(schema, '__getitem__'):
+                            try:
+                                field = schema.__getitem__(field_name)
+                            except Exception:
+                                field = None
+                        if field is None and hasattr(schema, 'get'):
+                            field = schema.get(field_name, None)  # type: ignore
+                        if field is not None and hasattr(field, 'defaultFactory') and field.defaultFactory:
+                            # Si el defaultFactory proviene del módulo acta, reemplazar
+                            df = field.defaultFactory
+                            mod = getattr(df, '__module__', '')
+                            if 'genweb.organs.content.acta.acta' in mod or isinstance(df, type(self._acta_saved_default)):
+                                self._fti_saved_field_defaults_map[field_name] = df
+                                field.defaultFactory = _safe_factory
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            self._acta_patch_applied = True
+        except Exception:
+            self._acta_patch_applied = False
+
+    def finish(self):
+        # Restaurar parches globales
+        try:
+            if getattr(self, "_acta_patch_applied", False):
+                try:
+                    if self._acta_field is not None and self._acta_saved_default is not None:
+                        self._acta_field.defaultFactory = self._acta_saved_default
+                except Exception:
+                    pass
+                try:
+                    # Restaurar defaults de todos los campos parcheados en el esquema
+                    if getattr(self, '_fti_saved_field_defaults_map', None):
+                        from plone.dexterity.interfaces import IDexterityFTI
+                        from zope.component import getUtility
+                        fti = getUtility(IDexterityFTI, name="genweb.organs.acta")
+                        schema = fti.lookupSchema()
+                        for fname, df in self._fti_saved_field_defaults_map.items():
+                            try:
+                                field = None
+                                if hasattr(schema, '__getitem__'):
+                                    try:
+                                        field = schema.__getitem__(fname)
+                                    except Exception:
+                                        field = None
+                                if field is None and hasattr(schema, 'get'):
+                                    field = schema.get(fname, None)  # type: ignore
+                                if field is not None and hasattr(field, 'defaultFactory'):
+                                    field.defaultFactory = df
+                            except Exception:
+                                continue
+                except Exception:
+                    pass
+                try:
+                    # Restaurar todas las funciones *_default_factory del módulo acta
+                    if getattr(self, '_acta_saved_factories_map', None):
+                        from genweb.organs.content.acta import acta as acta_mod  # type: ignore
+                        for name, func in self._acta_saved_factories_map.items():
+                            setattr(acta_mod, name, func)
+                except Exception:
+                    pass
+        finally:
+            super_finish = getattr(super(), "finish", None)
+            if callable(super_finish):
+                super_finish()
+
 
     def global_obj_hook(self, obj, item):
         item = self.import_annotations(obj, item)
@@ -572,6 +692,32 @@ class CustomImportContent(ImportContent):
         # # drop empty creator
         item["creators"] = [i for i in item.get("creators", []) if i]
 
+        # Normalizar proposalPoint a string para tipos de organs
+        try:
+            if item.get("@type") in {"genweb.organs.punt", "genweb.organs.subpunt", "genweb.organs.acord"}:
+                if item.get("proposalPoint") is not None:
+                    item["proposalPoint"] = str(item["proposalPoint"])
+        except Exception:
+            pass
+
+        # Normalizar campos RichText para plone.restapi (usar dict serializable)
+        rich_fields = [
+            "infoVotacio", "info_firma", "acta", "ordenDelDia",
+            "membresConvidats", "membresConvocats", "llistaExcusats",
+            "llistaNoAssistens",
+        ]
+        for fname in rich_fields:
+            if fname in item:
+                val = item.get(fname)
+                if isinstance(val, str):
+                    item[fname] = {
+                        "data": val,
+                        "content-type": "text/html",
+                    }
+                elif val is None:
+                    # Eliminar para no disparar validaciones de tipo
+                    item.pop(fname, None)
+
         return item
 
     def dict_hook_topic(self, item):
@@ -707,6 +853,53 @@ class CustomImportContent(ImportContent):
 
             factory_kwargs = item.get("factory_kwargs", {})
 
+            # Parche anti-recursión para genweb.organs.acta ANTES de crear el objeto
+            _acta_field = None
+            _acta_saved_default = None
+            _acta_saved_factory_fn = None
+            _fti_schema_field = None
+            _fti_schema_saved_default = None
+            _acta_patched = False
+            if fix_portal_type(item.get("@type")) == "genweb.organs.acta":
+                try:
+                    from genweb.organs.content.acta import acta as acta_mod  # type: ignore
+                    from genweb.organs.content.acta.acta import IActa  # type: ignore
+                    from plone.app.textfield.value import RichTextValue
+                    from plone.dexterity.interfaces import IDexterityFTI
+                    from zope.component import getUtility
+                    _acta_field = IActa.get("membresConvidats", None)
+                    # Monkeypatch del factory del módulo y del field (por si se evalúa en create)
+                    if hasattr(acta_mod, "membres_convidats_default_factory"):
+                        _acta_saved_factory_fn = acta_mod.membres_convidats_default_factory
+                        def _safe_factory(*args, **kwargs):
+                            return RichTextValue("", mimeType="text/html", outputMimeType="text/x-html-safe")
+                        acta_mod.membres_convidats_default_factory = _safe_factory
+                        if _acta_field is not None and hasattr(_acta_field, "defaultFactory"):
+                            _acta_saved_default = getattr(_acta_field, "defaultFactory", None)
+                            _acta_field.defaultFactory = _safe_factory
+                        # Parchear también el campo del esquema activo del FTI
+                        try:
+                            fti = getUtility(IDexterityFTI, name="genweb.organs.acta")
+                            schema = fti.lookupSchema()
+                            _fti_schema_field = getattr(schema, "__getitem__", lambda k: None)("membresConvidats") if hasattr(schema, "__getitem__") else None
+                            if _fti_schema_field is None and hasattr(schema, "get"):
+                                _fti_schema_field = schema.get("membresConvidats", None)  # type: ignore
+                            if _fti_schema_field is not None and hasattr(_fti_schema_field, "defaultFactory"):
+                                _fti_schema_saved_default = getattr(_fti_schema_field, "defaultFactory", None)
+                                _fti_schema_field.defaultFactory = _safe_factory
+                        except Exception:
+                            pass
+                        _acta_patched = True
+                    # Pasar el valor en factory_kwargs para evitar defaultFactory
+                    raw_html = item.get("membresConvidats") or ""
+                    factory_kwargs["membresConvidats"] = RichTextValue(
+                        raw_html,
+                        mimeType="text/html",
+                        outputMimeType="text/x-html-safe",
+                    )
+                except Exception:
+                    _acta_patched = False
+
             # Handle existing content
             self.update_existing = False
             if item["id"] in container:
@@ -780,6 +973,25 @@ class CustomImportContent(ImportContent):
                     item["@id"],
                     exc_info=True)
                 continue
+            finally:
+                # Restaurar parches de acta después de tratar el objeto
+                if _acta_patched:
+                    try:
+                        if _acta_field is not None and _acta_saved_default is not None:
+                            _acta_field.defaultFactory = _acta_saved_default
+                    except Exception:
+                        pass
+                    try:
+                        if _fti_schema_field is not None and _fti_schema_saved_default is not None:
+                            _fti_schema_field.defaultFactory = _fti_schema_saved_default
+                    except Exception:
+                        pass
+                    try:
+                        if _acta_saved_factory_fn is not None:
+                            from genweb.organs.content.acta import acta as acta_mod  # type: ignore
+                            acta_mod.membres_convidats_default_factory = _acta_saved_factory_fn
+                    except Exception:
+                        pass
 
         return added
 
@@ -789,6 +1001,44 @@ class CustomImportContent(ImportContent):
         # import using plone.restapi deserializers
         deserializer = getMultiAdapter((new, self.request), IDeserializeFromJson)
         self.request["BODY"] = json.dumps(item)
+        # Evitar recursion en defaultFactory de membresConvidats durante import
+        _field = None
+        _saved_default = None
+        _saved_factory_fn = None
+        if item.get("@type") == "genweb.organs.acta":
+            try:
+                from genweb.organs.content.acta import acta as acta_mod  # type: ignore
+                from genweb.organs.content.acta.acta import IActa  # type: ignore
+                from plone.app.textfield.value import RichTextValue
+                _field = IActa.get("membresConvidats", None)
+                # Monkeypatch del factory de módulo y del field
+                if hasattr(acta_mod, "membres_convidats_default_factory"):
+                    _saved_factory_fn = acta_mod.membres_convidats_default_factory
+                    def _safe_factory(context):
+                        return RichTextValue("", mimeType="text/html", outputMimeType="text/x-html-safe")
+                    acta_mod.membres_convidats_default_factory = _safe_factory
+                    if _field is not None and hasattr(_field, "defaultFactory"):
+                        _saved_default = getattr(_field, "defaultFactory", None)
+                        _field.defaultFactory = _safe_factory
+                # Preinicializar el atributo para evitar que cualquier acceso dispare el factory
+                try:
+                    raw_html = item.get("membresConvidats") or ""
+                    setattr(
+                        new,
+                        "membresConvidats",
+                        RichTextValue(
+                            raw_html,
+                            mimeType="text/html",
+                            outputMimeType="text/x-html-safe",
+                        ),
+                    )
+                except Exception:
+                    pass
+            except Exception:
+                # Si falla la importación del esquema, seguimos sin parchear
+                _field = None
+                _saved_default = None
+                _saved_factory_fn = None
         try:
             try:
                 new = deserializer(validate_all=False, data=item)
@@ -844,17 +1094,40 @@ class CustomImportContent(ImportContent):
                 # logger.error("TODO ERROR TFE_STATE: %s ", json.dumps(TFE_STATE_MAPPING))
                 new.type_codirector = item["type_codirector"]
             else:
-                logger.error("TODO ERROR : %s", str(e))
-                # Genweb6 añadimos imagen aunque este rota
-                from plone.namedfile.file import NamedBlobImage
-                new.image = NamedBlobImage(
-                    data=item['image']['data'],
-                    filename=item['image']['filename'])
-                logger.warning(
-                    "OJO Cannot deserialize %s %s %s", item["@type"],
-                    item["@id"],
-                    str(e),
-                    exc_info=True)
+                msg = str(e)
+                logger.error("TODO ERROR : %s", msg)
+                # Caso conocido: adaptador de evento no aplicable en acta/sessio
+                if 'IEventAccessor' in msg or 'Could not adapt' in msg:
+                    # Ignorar y continuar (no es bloqueante para la importación)
+                    pass
+                else:
+                    # Intento de asignar imagen si venía en el JSON y falló la deserialización
+                    try:
+                        from plone.namedfile.file import NamedBlobImage
+                        if item.get('image') and isinstance(item['image'], dict):
+                            new.image = NamedBlobImage(
+                                data=item['image'].get('data'),
+                                filename=item['image'].get('filename'))
+                    except Exception:
+                        pass
+                    logger.warning(
+                        "OJO Cannot deserialize %s %s %s", item["@type"],
+                        item["@id"],
+                        msg,
+                        exc_info=True)
+        finally:
+            # Restaurar defaultFactory y función original si las modificamos
+            try:
+                if _field is not None and _saved_default is not None:
+                    _field.defaultFactory = _saved_default
+            except Exception:
+                pass
+            try:
+                if _saved_factory_fn is not None:
+                    from genweb.organs.content.acta import acta as acta_mod  # type: ignore
+                    acta_mod.membres_convidats_default_factory = _saved_factory_fn
+            except Exception:
+                pass
 
         # Blobs can be exported as only a path in the blob storage.
         # It seems difficult to dynamically use a different deserializer,
