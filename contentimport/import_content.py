@@ -483,6 +483,58 @@ class CustomImportContent(ImportContent):
                     facetes_correctas = set(item[faceta]) - set(values_remove)
                     item[faceta] = list(facetes_correctas)
 
+        # Genweb Organs: normalizar infoQuorums (Plone 6 espera string)
+        if item.get('@type') == 'genweb.organs.sessio':
+            # Campos requeridos que no pueden ir como null
+            if item.get('adrecaLlista') is None:
+                item['adrecaLlista'] = ''
+            if item.get('adrecaAfectatsLlista') is None:
+                item['adrecaAfectatsLlista'] = ''
+
+            val = item.get('infoQuorums', None)
+            if val in (None, {}, ''):
+                item['infoQuorums'] = '{}'
+            elif isinstance(val, dict):
+                item['infoQuorums'] = json.dumps(val)
+            elif not isinstance(val, str):
+                item['infoQuorums'] = json.dumps(val)
+
+        # Genweb Organs: normalizar infoVotacio (acord/votacio) → Text
+        if 'infoVotacio' in item:
+            val = item.get('infoVotacio', None)
+            if val in (None, {}, ''):
+                item['infoVotacio'] = '{}'
+            elif isinstance(val, dict):
+                item['infoVotacio'] = json.dumps(val)
+            elif not isinstance(val, str):
+                item['infoVotacio'] = json.dumps(val)
+
+        # Genweb Organs: normalizar info_firma (acta y ficheros) → Text
+        if 'info_firma' in item:
+            val = item.get('info_firma', None)
+            if val in (None, {}, ''):
+                item['info_firma'] = '{}'
+            elif isinstance(val, dict):
+                item['info_firma'] = json.dumps(val)
+            elif not isinstance(val, str):
+                item['info_firma'] = json.dumps(val)
+
+        if 'estatsLlista' in item and isinstance(item.get('estatsLlista'), str):
+            import unicodedata
+            item['estatsLlista'] = unicodedata.normalize('NFC', item['estatsLlista'])
+
+        # Normalizar proposalPoint a string para evitar ValidationError
+        if 'proposalPoint' in item and not isinstance(item['proposalPoint'], str):
+            item['proposalPoint'] = str(item['proposalPoint'])
+
+        # Normalizar title: quitar saltos de línea para campo TextLine
+        if 'title' in item and isinstance(item['title'], str):
+            item['title'] = item['title'].replace('\r\n', ' ').replace('\n', ' ').strip()
+
+        # Quitar language para evitar ConstraintNotSatisfied
+        if 'language' in item:
+            item.pop('language')
+
         return obj, item
 
     def global_dict_hook(self, item):
@@ -843,13 +895,19 @@ class CustomImportContent(ImportContent):
 
                 # logger.error("TODO ERROR TFE_STATE: %s ", json.dumps(TFE_STATE_MAPPING))
                 new.type_codirector = item["type_codirector"]
+            elif "{'message': 'Object is of wrong type.', 'field': 'proposalPoint', 'error': 'ValidationError'}" in str(e):
+                new.proposalPoint = item.get('proposalPoint')
+            elif "field': 'language'" in str(e):
+                new.language = item.get('language')
             else:
                 logger.error("TODO ERROR : %s", str(e))
                 # Genweb6 añadimos imagen aunque este rota
                 from plone.namedfile.file import NamedBlobImage
-                new.image = NamedBlobImage(
-                    data=item['image']['data'],
-                    filename=item['image']['filename'])
+                img = item.get('image')
+                if isinstance(img, dict) and 'data' in img and 'filename' in img:
+                    new.image = NamedBlobImage(
+                        data=img['data'],
+                        filename=img['filename'])
                 logger.warning(
                     "OJO Cannot deserialize %s %s %s", item["@type"],
                     item["@id"],
