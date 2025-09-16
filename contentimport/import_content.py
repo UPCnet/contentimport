@@ -535,6 +535,7 @@ class CustomImportContent(ImportContent):
         if 'language' in item:
             item.pop('language')
 
+
         return obj, item
 
     def global_dict_hook(self, item):
@@ -932,6 +933,25 @@ class CustomImportContent(ImportContent):
                 item["@type"]
             )
             item["UID"] = uuid
+
+        # Asignar directamente los valores de horaInici y horaFi del JSON
+        if item.get('@type') == 'genweb.organs.acta':
+            from DateTime import DateTime
+            if 'horaInici' in item and item['horaInici']:
+                try:
+                    # Convertir directamente a DateTime y asignar
+                    dt = DateTime(item['horaInici'])
+                    new.horaInici = dt
+                except Exception:
+                    pass
+            if 'horaFi' in item and item['horaFi']:
+                try:
+                    # Convertir directamente a DateTime y asignar
+                    dt = DateTime(item['horaFi'])
+                    new.horaFi = dt
+                except Exception:
+                    pass
+
 
         self.global_obj_hook(new, item)
         self.custom_obj_hook(new, item)
