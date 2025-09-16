@@ -495,7 +495,9 @@ class CustomImportContent(ImportContent):
             if val in (None, {}, ''):
                 item['infoQuorums'] = '{}'
             elif isinstance(val, dict):
-                item['infoQuorums'] = json.dumps(val)
+                # Asegurar que las claves se mantengan como enteros y usar repr para python literal
+                val_int_keys = {int(k): v for k, v in val.items()}
+                item['infoQuorums'] = repr(val_int_keys)
             elif not isinstance(val, str):
                 item['infoQuorums'] = json.dumps(val)
 
@@ -530,10 +532,6 @@ class CustomImportContent(ImportContent):
         # Normalizar title: quitar saltos de línea para campo TextLine
         if 'title' in item and isinstance(item['title'], str):
             item['title'] = item['title'].replace('\r\n', ' ').replace('\n', ' ').strip()
-
-        # Quitar language para evitar ConstraintNotSatisfied
-        if 'language' in item:
-            item.pop('language')
 
 
         return obj, item
@@ -900,6 +898,8 @@ class CustomImportContent(ImportContent):
                 new.proposalPoint = item.get('proposalPoint')
             elif "field': 'language'" in str(e):
                 new.language = item.get('language')
+            elif "{'message': 'Constraint not satisfied', 'field': 'estatsLlista', 'error': 'ValidationError'}" in str(e):
+                new.estatsLlista = item.get('estatsLlista')
             else:
                 logger.error("TODO ERROR : %s", str(e))
                 # Genweb6 añadimos imagen aunque este rota
@@ -966,11 +966,13 @@ class CustomImportContent(ImportContent):
         # These are reused and dropped in ResetModifiedAndCreatedDate
         modified = item.get("modified", item.get("modification_date", None))
         if modified:
+            from DateTime import DateTime
             modification_date = DateTime(dateutil.parser.parse(modified))
             new.modification_date = modification_date
             new.aq_base.modification_date_migrated = modification_date
         created = item.get("created", item.get("creation_date", None))
         if created:
+            from DateTime import DateTime
             creation_date = DateTime(dateutil.parser.parse(created))
             new.creation_date = creation_date
             new.aq_base.creation_date_migrated = creation_date
