@@ -531,8 +531,32 @@ class CustomImportContent(ImportContent):
 
         # Normalizar title: quitar saltos de línea para campo TextLine
         if 'title' in item and isinstance(item['title'], str):
-            item['title'] = item['title'].replace('\r\n', ' ').replace('\n', ' ').strip()
+            item['title'] = item['title'].replace(
+                '\r\n', ' ').replace(
+                '\n', ' ').strip()
 
+        # Normalizar campos Datetime para genweb.organs.acta
+        # Convertir strings ISO con timezone a hora local sin timezone
+        if item.get('@type') == 'genweb.organs.acta':
+            for field_name in ['horaInici', 'horaFi']:
+                if field_name in item and item[field_name]:
+                    try:
+                        if isinstance(item[field_name], str):
+                            # Parsear fecha con timezone
+                            dt = dateutil.parser.parse(item[field_name])
+                            # Convertir a hora local sin timezone
+                            # (el deserializador convierte a UTC,
+                            # pero queremos la hora local)
+                            if dt.tzinfo is not None:
+                                # Remover timezone manteniendo hora local
+                                item[field_name] = dt.replace(
+                                    tzinfo=None
+                                ).isoformat()
+                    except Exception as e:
+                        logger.warning(
+                            f"Error normalizing {field_name}: {e}"
+                        )
+                        pass
 
         return obj, item
 
@@ -933,25 +957,6 @@ class CustomImportContent(ImportContent):
                 item["@type"]
             )
             item["UID"] = uuid
-
-        # Asignar directamente los valores de horaInici y horaFi del JSON
-        if item.get('@type') == 'genweb.organs.acta':
-            from DateTime import DateTime
-            if 'horaInici' in item and item['horaInici']:
-                try:
-                    # Convertir directamente a DateTime y asignar
-                    dt = DateTime(item['horaInici'])
-                    new.horaInici = dt
-                except Exception:
-                    pass
-            if 'horaFi' in item and item['horaFi']:
-                try:
-                    # Convertir directamente a DateTime y asignar
-                    dt = DateTime(item['horaFi'])
-                    new.horaFi = dt
-                except Exception:
-                    pass
-
 
         self.global_obj_hook(new, item)
         self.custom_obj_hook(new, item)
