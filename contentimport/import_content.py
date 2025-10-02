@@ -507,9 +507,9 @@ class CustomImportContent(ImportContent):
             if val in (None, {}, ''):
                 item['infoVotacio'] = '{}'
             elif isinstance(val, dict):
-                item['infoVotacio'] = json.dumps(val)
+                item['infoVotacio'] = repr(val)
             elif not isinstance(val, str):
-                item['infoVotacio'] = json.dumps(val)
+                item['infoVotacio'] = repr(val)
 
         # Genweb Organs: normalizar info_firma (acta y ficheros) → Text
         if 'info_firma' in item:
@@ -517,9 +517,9 @@ class CustomImportContent(ImportContent):
             if val in (None, {}, ''):
                 item['info_firma'] = '{}'
             elif isinstance(val, dict):
-                item['info_firma'] = json.dumps(val)
+                item['info_firma'] = repr(val)
             elif not isinstance(val, str):
-                item['info_firma'] = json.dumps(val)
+                item['info_firma'] = repr(val)
 
         if 'estatsLlista' in item and isinstance(item.get('estatsLlista'), str):
             import unicodedata
